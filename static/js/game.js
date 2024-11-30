@@ -51,7 +51,7 @@ document.getElementById('queue-button').onclick = function() {
 function startMatchTimer() {
   setTimeout(() => {
     endMatch();
-  }, 10 * 60 * 1000); // 10 Minuten in Millisekunden
+  }, 10 * 60); // 10 Minuten in Millisekunden
 }
 
 function endMatch() {
@@ -62,17 +62,17 @@ function endMatch() {
     console.log("Match automatisch beendet.");
   });
 
-  // Spieler aus dem Spiel entfernen
   const player1Ref = ref(db, "game/player1");
   const player2Ref = ref(db, "game/player2");
 
   remove(player1Ref);
   remove(player2Ref);
 }
+
 function clearQueuePeriodically() {
   setInterval(() => {
     clearQueue();
-  }, 10 * 60 * 1000); // 10 Minuten in Millisekunden
+  }, 10 * 60); // 10 Minuten in Millisekunden
 }
 
 function clearQueue() {

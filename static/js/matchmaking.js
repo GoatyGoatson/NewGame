@@ -1,10 +1,9 @@
-// matchmaking.js
 import { playerQueueRef, gameRef, set, update, onValue, push } from './firebase.js';
 
 function addPlayerToQueue() {
   const newPlayerRef = push(playerQueueRef);
   set(newPlayerRef, {
-    name: `Player-${Math.floor(Math.random() * 1000)}`,
+    name: `Player-${Math.floor(Math.random() * 10)}`,
     timestamp: Date.now(),
     health: 100
   });
