@@ -8,56 +8,11 @@ function updatePlayerPositions() {
   onValue(gameRef, (snapshot) => {
     const gameData = snapshot.val();
     if (gameData && gameData.status === "active") {
-      renderPlayers(
-        gameData.player1, 
-        gameData.player2
-      );
+      renderPlayers(gameData.player1, gameData.player2);
+      console.log("Spieler gerendert:", gameData);
     }
   });
 }
-
-
-
-
-
-
-function startMatchTimer() {
-  setTimeout(() => {
-    endMatch();
-  }, 10 * 60 * 1000); // 10 Minuten in Millisekunden
-}
-
-function endMatch() {
-  update(gameRef, {
-    status: "ended",
-    winner: "Timeout"
-  }).then(() => {
-    console.log("Match automatisch beendet.");
-  });
-
-  const player1Ref = ref(gameRef, "player1");
-  const player2Ref = ref(gameRef, "player2");
-
-  remove(player1Ref);
-  remove(player2Ref);
-}
-
-function clearQueuePeriodically() {
-  setInterval(() => {
-    clearQueue();
-  }, 10 * 60 * 1000); // 10 Minuten in Millisekunden
-}
-
-function clearQueue() {
-  remove(playerQueueRef)
-    .then(() => {
-      console.log("Queue automatisch geleert.");
-    })
-    .catch((error) => {
-      console.error("Fehler beim Leeren der Queue:", error);
-    });
-}
-clearQueuePeriodically();
 
 let currentPlayer = null;
 let isPlayer1 = false;
@@ -150,7 +105,6 @@ function initGame() {
   joinQueueButton.addEventListener("click", () => {
     addPlayerToQueue();
 
-    // Prüfe regelmäßig, ob ein Match gefunden wurde
     onValue(playerQueueRef, (snapshot) => {
       const players = snapshot.val();
       if (players) {
