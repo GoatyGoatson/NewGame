@@ -30,7 +30,8 @@ function createMap(map) {
 document.getElementById('queue-button').onclick = function() {
   const button = document.getElementById('queue-button');
   button.textContent = "Warten auf Gegner...";
-  button.style
+  button.style.backgroundColor = "purple";
+  button.disabled = true;
 
   addPlayerToQueue();
   
@@ -41,13 +42,54 @@ document.getElementById('queue-button').onclick = function() {
 
       if (playerIds.length === 2) {
         button.textContent = "Match gefunden! Starte Spiel...";
+        button.style.backgroundColor = "green";
       }
     }
   });
 };
 
+function startMatchTimer() {
+  setTimeout(() => {
+    endMatch();
+  }, 10 * 60 * 1000); // 10 Minuten in Millisekunden
+}
 
-/*
+function endMatch() {
+  update(gameRef, {
+    status: "ended",
+    winner: "Timeout"
+  }).then(() => {
+    console.log("Match automatisch beendet.");
+  });
+
+  // Spieler aus dem Spiel entfernen
+  const player1Ref = ref(db, "game/player1");
+  const player2Ref = ref(db, "game/player2");
+
+  remove(player1Ref);
+  remove(player2Ref);
+}
+function clearQueuePeriodically() {
+  setInterval(() => {
+    clearQueue();
+  }, 10 * 60 * 1000); // 10 Minuten in Millisekunden
+}
+
+function clearQueue() {
+  remove(playerQueueRef)
+    .then(() => {
+      console.log("Queue automatisch geleert.");
+    })
+    .catch((error) => {
+      console.error("Fehler beim Leeren der Queue:", error);
+    });
+}
+
+// Starte die automatische Reinigung
+clearQueuePeriodically();
+
+
+
 let currentPlayer = null;
 let isPlayer1 = false;
 
@@ -102,7 +144,6 @@ function updateBullets() {
     const bullets = snapshot.val();
     const gameArea = document.getElementById('game');
     
-    // Clear existing bullets
     document.querySelectorAll('.bullet').forEach(b => b.remove());
 
     if (bullets) {
@@ -122,9 +163,10 @@ function updateBullets() {
       });
     }
   });
-}*/
+}
 
 function initGame() {
+
   updateMatchAndQueueStatus();
 
   const joinQueueButton = document.getElementById("joinQueueButton");
@@ -137,9 +179,11 @@ function initGame() {
       if (players) {
         const playerIds = Object.keys(players);
         
-        // Überprüfe, ob genau 2 Spieler in der Queue sind
         if (playerIds.length === 2) {
-          // Sortiere Spieler nach ihrem Timestamp (erste Anmeldung zuerst)
+          setupPlayerMovement();
+          startMatchTimer();
+          updateBullets();
+
           const sortedPlayers = playerIds.sort((a, b) => players[a].timestamp - players[b].timestamp);
           
           // Setze die Spieler in das Spiel und starte das Match
@@ -160,10 +204,7 @@ function initGame() {
             },
             status: "active"
           }).then(() => {
-            // Lösche die Queue, da das Match nun startet
-            set(playerQueueRef, null);
-            
-            // Map wird erst jetzt erstellt
+            set(playerQueueRef, null);            
             createMap(map);
           });
         }
