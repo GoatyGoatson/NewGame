@@ -29,38 +29,41 @@ function addPlayerToQueue(playerData) {
   }
   
   // Wenn zwei Spieler in der Warteschlange sind, das Spiel starten und Farben zuweisen
-  onValue(playerQueueRef, (snapshot) => {
-    const players = snapshot.val();
-    if (players) {
-      const playerIds = Object.keys(players);
-      if (playerIds.length === 2) {
-        // Zwei Spieler sind in der Warteschlange
-        const player1 = players[playerIds[0]];
-        const player2 = players[playerIds[1]];
-  
-        // Den Spielern die Farben und Startpositionen zuweisen
-        player1.color = "blue";
-        player1.x = 1;  // Startposition für Spieler 1
-        player1.y = 1;
-  
-        player2.color = "red";
-        player2.x = 14;  // Startposition für Spieler 2
-        player2.y = 1;
-  
-        // Spieler zuweisen und Spielstatus aktiv setzen
-        update(gameRef, {
-          player1: player1,
-          player2: player2,
-          status: "active",
-        });
-  
-        // Warteschlange erst leeren, wenn das Spiel gestartet ist
-        set(playerQueueRef, null);
-      }
+onValue(playerQueueRef, (snapshot) => {
+  const players = snapshot.val();
+  if (players) {
+    const playerIds = Object.keys(players); // IDs der Spieler in der Queue
+    if (playerIds.length === 2) {
+      // Zwei Spieler in der Warteschlange
+      const player1Id = playerIds[0]; // Erster Spieler in der Queue
+      const player2Id = playerIds[1]; // Zweiter Spieler in der Queue
+
+      const player1 = players[player1Id];
+      const player2 = players[player2Id];
+
+      // Den Spielern die Farben und Startpositionen zuweisen
+      player1.color = "blue";  // Farbe für Spieler 1
+      player1.x = 1;  // Startposition Spieler 1
+      player1.y = 1;
+
+      player2.color = "red";  // Farbe für Spieler 2
+      player2.x = 14;  // Startposition Spieler 2
+      player2.y = 1;
+
+      // Spieler zuweisen und Spielstatus aktiv setzen
+      update(gameRef, {
+        player1: player1,
+        player2: player2,
+        status: "active",
+      });
+
+      // Warteschlange leeren nach einer kurzen Verzögerung
+      setTimeout(() => {
+        set(playerQueueRef, null); // Warteschlange nach erfolgreichem Start löschen
+      }, 1000);
     }
-  });
-  
-  
+  }
+});
 
 // Spielfeld und Spieler erstellen
 const map = [
