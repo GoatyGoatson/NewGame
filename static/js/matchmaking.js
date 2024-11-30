@@ -36,6 +36,7 @@ function addPlayerToQueue(playerName) {
   }).catch((error) => {
     console.error('Fehler beim Hinzufügen des Spielers zur Queue:', error);
     alert('Fehler beim Beitreten zur Queue. Bitte versuche es erneut.');
+    resetButton(document.getElementById('queue-button')); // Button zurücksetzen
   });
 }
 
