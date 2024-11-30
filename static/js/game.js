@@ -42,7 +42,7 @@ function addPlayerToQueue(playerData) {
         player1.color = "blue";
         player1.x = 1;  // Startposition für Spieler 1
         player1.y = 1;
-
+  
         player2.color = "red";
         player2.x = 14;  // Startposition für Spieler 2
         player2.y = 1;
@@ -54,11 +54,12 @@ function addPlayerToQueue(playerData) {
           status: "active",
         });
   
-        // Warteschlange leeren, nachdem das Spiel begonnen hat
+        // Warteschlange erst leeren, wenn das Spiel gestartet ist
         set(playerQueueRef, null);
       }
     }
   });
+  
   
 
 // Spielfeld und Spieler erstellen
