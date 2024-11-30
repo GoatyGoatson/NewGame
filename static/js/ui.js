@@ -1,4 +1,4 @@
-const map = [
+const gamemap = [
   [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
   [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
   [1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 1, 1],
@@ -11,7 +11,7 @@ const map = [
 ];
 
 
-function createMap(map) {
+function createMap(gamemap) {
     const gameArea = document.getElementById('game');
     gameArea.innerHTML = '';
   
