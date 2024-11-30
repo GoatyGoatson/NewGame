@@ -136,11 +136,7 @@ ul > li:hover {
 }
 
 
-.tile {
-    width: 50px;
-    height: 50px;
-    position: relative;
-}
+
 
 .wall {
     background-color: black;
@@ -150,12 +146,7 @@ ul > li:hover {
     background-color: white;
 }
 
-.player {
-    background-color: lightblue;
-    position: absolute;
-    width: 50px;
-    height: 50px;
-}
+
 
 .bullet {
     background-color: lightcoral;
@@ -167,3 +158,29 @@ ul > li:hover {
     transform: translate(-50%, -50%);
     border-radius: 50%;
 }
+
+.tile {
+    position: relative;
+    width: 40px;  /* Passe die Größe an deine Map an */
+    height: 40px;
+    display: inline-block;
+  }
+  
+  .player {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    z-index: 10;
+  }
+  
+  .player1 {
+    opacity: 0.8;
+  }
+  
+  .player2 {
+    opacity: 0.8;
+  }

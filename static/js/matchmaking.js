@@ -1,5 +1,5 @@
 import { playerQueueRef, gameRef, set, onValue, push, update } from './firebase.js';
-import { createMap, gameMap } from './ui.js';  // Importiere gameMap
+import { createMap, gameMap, renderPlayers } from './ui.js';
 
 document.getElementById('queue-button').onclick = handleQueueButtonClick;
 
@@ -46,13 +46,11 @@ function observeQueue(button) {
     const players = snapshot.val();
     if (players) {
       const playerIds = Object.keys(players);
-
       if (playerIds.length === 2) {
         button.textContent = "Match gefunden! Starte Spiel...";
         button.style.backgroundColor = "green";
-
         createMap(gameMap);
-        startMatch(players); 
+        startMatch(players);
       }
     }
   });
@@ -70,7 +68,6 @@ function startMatch(players) {
     players[a].timestamp - players[b].timestamp
   );
 
-  // Spawn-Positionen basierend auf deiner Map
   update(gameRef, {
     player1: {
       ...players[sortedPlayers[0]],
@@ -88,10 +85,14 @@ function startMatch(players) {
     },
     status: "active"
   }).then(() => {
-    console.log("Match erfolgreich gestartet!");
-    set(playerQueueRef, null); // Queue zurücksetzen
-    // Erstelle die Map NACHDEM Spielerdaten gesetzt wurden
-    createMap(gameMap);
+    console.log("Match erfolgreich gestargt!");
+    set(playerQueueRef, null);
+    
+    // Spieler direkt nach dem Starten des Matches rendern
+    renderPlayers(
+      { x: 1, y: 1, color: 'blue' }, 
+      { x: 14, y: 1, color: 'red' }
+    );
   }).catch((error) => {
     console.error("Fehler beim Starten des Matches:", error);
   });

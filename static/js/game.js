@@ -1,6 +1,25 @@
 import { gameRef, bulletsRef, update, onValue, push, ref, remove, set, playerQueueRef } from './firebase.js';
 import { addPlayerToQueue } from './matchmaking.js';
 import { gameMap } from './ui.js'; 
+import { renderPlayers } from './ui.js';
+
+
+function updatePlayerPositions() {
+  onValue(gameRef, (snapshot) => {
+    const gameData = snapshot.val();
+    if (gameData && gameData.status === "active") {
+      renderPlayers(
+        gameData.player1, 
+        gameData.player2
+      );
+    }
+  });
+}
+
+
+
+
+
 
 function startMatchTimer() {
   setTimeout(() => {
@@ -125,6 +144,7 @@ function updateBullets() {
 
 function initGame() {
   updateMatchAndQueueStatus();
+  updatePlayerPositions();
 
   const joinQueueButton = document.getElementById("joinQueueButton");
   joinQueueButton.addEventListener("click", () => {
