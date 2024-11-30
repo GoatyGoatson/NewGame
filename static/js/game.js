@@ -29,50 +29,34 @@ function addPlayerToQueue(playerData) {
   }
   
   // Wenn zwei Spieler in der Warteschlange sind, das Spiel starten und Farben zuweisen
-onValue(playerQueueRef, (snapshot) => {
-  const players = snapshot.val();
-
-  if (players) {
-    const playerIds = Object.keys(players);
-
-    // Prüfen, ob zwei Spieler in der Queue sind
-    if (playerIds.length === 2) {
-      const player1Id = playerIds[0];
-      const player2Id = playerIds[1];
-
-      const player1 = players[player1Id];
-      const player2 = players[player2Id];
-
-      // Existierende Spielzustände prüfen, um Überschreibungen zu vermeiden
-      onValue(gameRef, (gameSnapshot) => {
-        const gameData = gameSnapshot.val();
-
-        if (!gameData || gameData.status !== "active") {
-          // Spieler zuweisen und Positionen festlegen
-          player1.color = "blue";
-          player1.x = 1;
-          player1.y = 1;
-
-          player2.color = "red";
-          player2.x = 14;
-          player2.y = 1;
-
-          // Daten in die Datenbank schreiben
-          update(gameRef, {
-            player1: player1,
-            player2: player2,
-            status: "active",
-          }).then(() => {
-            // Queue erst leeren, nachdem die Spieler initialisiert wurden
-            set(playerQueueRef, null);
-          });
-        }
-      }, { onlyOnce: true });
+  onValue(playerQueueRef, (snapshot) => {
+    const players = snapshot.val();
+  
+    if (players) {
+      const playerIds = Object.keys(players);
+  
+      // Prüfen, ob zwei Spieler in der Queue sind
+      if (playerIds.length === 2) {
+        const player1Id = playerIds[0];
+        const player2Id = playerIds[1];
+  
+        // Spieler-Daten aus der Queue abrufen
+        const player1 = players[player1Id];
+        const player2 = players[player2Id];
+  
+        // Spielstatus aktualisieren
+        update(gameRef, {
+          player1: { ...player1, color: "blue", x: 1, y: 1 },
+          player2: { ...player2, color: "red", x: 14, y: 1 },
+          status: "active",
+        }).then(() => {
+          // Queue leeren
+          set(playerQueueRef, null);
+        });
+      }
     }
-  }
-});
-
-
+  });
+  
 
 // Spielfeld und Spieler erstellen
 const map = [
@@ -214,24 +198,37 @@ function shootBullet() {
 }
 
 // Spieler 1 Bewegungen synchronisieren
-onValue(ref(db, "game/player1"), (snapshot) => {
-  const data = snapshot.val();
-  if (data) {
-    const player1 = document.getElementById("player1");
-    player1.style.left = `${data.x * 50}px`;
-    player1.style.top = `${data.y * 50}px`;
+onValue(gameRef, (snapshot) => {
+  const gameData = snapshot.val();
+
+  if (gameData && gameData.status === "active") {
+    const gameArea = document.getElementById("game");
+    gameArea.innerHTML = ""; // Spielfeld zurücksetzen
+
+    // Spieler 1 hinzufügen
+    const player1Div = document.createElement("div");
+    player1Div.id = "player1";
+    player1Div.style.width = "50px";
+    player1Div.style.height = "50px";
+    player1Div.style.backgroundColor = gameData.player1.color;
+    player1Div.style.position = "absolute";
+    player1Div.style.left = `${gameData.player1.x * 50}px`;
+    player1Div.style.top = `${gameData.player1.y * 50}px`;
+    gameArea.appendChild(player1Div);
+
+    // Spieler 2 hinzufügen
+    const player2Div = document.createElement("div");
+    player2Div.id = "player2";
+    player2Div.style.width = "50px";
+    player2Div.style.height = "50px";
+    player2Div.style.backgroundColor = gameData.player2.color;
+    player2Div.style.position = "absolute";
+    player2Div.style.left = `${gameData.player2.x * 50}px`;
+    player2Div.style.top = `${gameData.player2.y * 50}px`;
+    gameArea.appendChild(player2Div);
   }
 });
 
-// Spieler 2 Bewegungen synchronisieren
-onValue(ref(db, "game/player2"), (snapshot) => {
-  const data = snapshot.val();
-  if (data) {
-    const player2 = document.getElementById("player2");
-    player2.style.left = `${data.x * 50}px`;
-    player2.style.top = `${data.y * 50}px`;
-  }
-});
 
 // Initialisierung der Map und Spieler
 createMap(map);
@@ -253,9 +250,11 @@ joinQueueButton.addEventListener('click', () => {
 // Daten des Spielstatus synchronisieren
 onValue(gameRef, (snapshot) => {
   const data = snapshot.val();
-  if (data && data.status === "active") {
-    console.log("Spiel gestartet zwischen:", data.player1, "und", data.player2);
-    // Hier könnte man den Spieler in das aktive Spiel überführen
-    // oder eine neue Spieloberfläche anzeigen.
+
+  if (!data || data.status !== "active") {
+    const joinQueueButton = document.getElementById("joinQueueButton");
+    joinQueueButton.disabled = false;
+    joinQueueButton.textContent = "Queue beitreten";
   }
 });
+
