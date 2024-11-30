@@ -1,83 +1,64 @@
 import { playerQueueRef, gameRef, set, onValue, push, update } from './firebase.js';
-import { createMap, gameMap, renderPlayers } from './ui.js';
+import { renderPlayers } from './ui.js';
 
-document.getElementById('queue-button').onclick = handleQueueButtonClick;
-
-function handleQueueButtonClick() {
+export function handleQueueButtonClick() {
   const button = document.getElementById('queue-button');
-  button.textContent = "Warten auf Gegner...";
-  button.style.backgroundColor = "purple";
-  button.disabled = true;
+  const playerNameInput = document.getElementById('player-name');
+  const playerName = playerNameInput.value.trim();
 
-  const playerName = getPlayerName();
   if (!playerName) {
     alert('Bitte gib einen gültigen Namen ein.');
     resetButton(button);
     return;
   }
 
-  addPlayerToQueue(playerName);
-  observeQueue(button);
+  button.textContent = "Warten auf Gegner...";
+  button.style.backgroundColor = "purple";
+  button.disabled = true;
+  playerNameInput.disabled = true;
+
+  addPlayerToQueue(playerName, button);
 }
 
-function getPlayerName() {
-  const playerNameInput = document.getElementById('player-name');
-  return playerNameInput.value.trim();
-}
-
-function addPlayerToQueue(playerName) {
+function addPlayerToQueue(playerName, button) {
   const newPlayerRef = push(playerQueueRef);
+  
   set(newPlayerRef, {
     name: playerName,
     timestamp: Date.now(),
     health: 100
   }).then(() => {
     console.log(`Spieler ${playerName} wurde der Queue hinzugefügt.`);
-    document.getElementById('player-name').disabled = true;
+    observeQueue(button);
   }).catch((error) => {
     console.error('Fehler beim Hinzufügen des Spielers zur Queue:', error);
     alert('Fehler beim Beitreten zur Queue. Bitte versuche es erneut.');
-    resetButton(document.getElementById('queue-button')); // Button zurücksetzen
+    resetButton(button);
   });
 }
 
 function observeQueue(button) {
   onValue(playerQueueRef, (snapshot) => {
     const players = snapshot.val();
-    if (players) {
-      const playerIds = Object.keys(players);
-      if (playerIds.length === 2) {
-        button.textContent = "Match gefunden! Starte Spiel...";
-        button.style.backgroundColor = "green";
-        createMap(gameMap);
-        startMatch(players);
-      }
+    if (players && Object.keys(players).length === 2) {
+      startMatch(players, button);
     }
   });
 }
 
-function resetButton(button) {
-  button.textContent = "Queue beitreten";
-  button.style.backgroundColor = "";
-  button.disabled = false;
-}
-
-function startMatch(players) {
-  const playerIds = Object.keys(players);
-  const sortedPlayers = playerIds.sort((a, b) =>
-    players[a].timestamp - players[b].timestamp
-  );
-
+function startMatch(players, button) {
+  const playerIds = Object.keys(players).sort((a, b) => players[a].timestamp - players[b].timestamp);
+  
   update(gameRef, {
     player1: {
-      ...players[sortedPlayers[0]],
+      ...players[playerIds[0]],
       x: 1,
       y: 1,
       color: 'blue',
       health: 100
     },
     player2: {
-      ...players[sortedPlayers[1]],
+      ...players[playerIds[1]],
       x: 14,
       y: 1,
       color: 'red',
@@ -85,12 +66,13 @@ function startMatch(players) {
     },
     status: "active"
   }).then(() => {
-    console.log("Match erfolgreich gestargt!");
+    button.textContent = "Match gefunden! Starte Spiel...";
+    button.style.backgroundColor = "green";
+    
     set(playerQueueRef, null);
     
-    // Spieler direkt nach dem Starten des Matches rendern
     renderPlayers(
-      { x: 1, y: 1, color: 'blue' }, 
+      { x: 1, y: 1, color: 'blue' },
       { x: 14, y: 1, color: 'red' }
     );
   }).catch((error) => {
@@ -98,4 +80,11 @@ function startMatch(players) {
   });
 }
 
-export { addPlayerToQueue, startMatch };
+function resetButton(button) {
+  button.textContent = "Queue beitreten";
+  button.style.backgroundColor = "";
+  button.disabled = false;
+  document.getElementById('player-name').disabled = false;
+}
+
+document.getElementById('queue-button').onclick = handleQueueButtonClick;
