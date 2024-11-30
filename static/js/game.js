@@ -22,41 +22,38 @@ const gameRef = ref(db, "game");
 const playerQueueRef = ref(db, "game/queue");  // Warteschlange für Spieler
 
 // Funktion, um einen Spieler zur Warteschlange hinzuzufügen
-// Funktion, um einen Spieler zur Warteschlange hinzuzufügen und ihm eine Farbe zuzuweisen
 function addPlayerToQueue(playerData) {
-    const newPlayerRef = push(playerQueueRef);  // Spieler zur Warteschlange hinzufügen
-    set(newPlayerRef, playerData);  // Spieler-Daten speichern
-  }
-  
-  // Wenn zwei Spieler in der Warteschlange sind, das Spiel starten und Farben zuweisen
-  onValue(playerQueueRef, (snapshot) => {
-    const players = snapshot.val();
-  
-    if (players) {
-      const playerIds = Object.keys(players);
-  
-      // Prüfen, ob zwei Spieler in der Queue sind
-      if (playerIds.length === 2) {
-        const player1Id = playerIds[0];
-        const player2Id = playerIds[1];
-  
-        // Spieler-Daten aus der Queue abrufen
-        const player1 = players[player1Id];
-        const player2 = players[player2Id];
-  
-        // Spielstatus aktualisieren
-        update(gameRef, {
-          player1: { ...player1, color: "blue", x: 1, y: 1 },
-          player2: { ...player2, color: "red", x: 14, y: 1 },
-          status: "active",
-        }).then(() => {
-          // Queue leeren
-          set(playerQueueRef, null);
-        });
-      }
+  const newPlayerRef = push(playerQueueRef);  // Spieler zur Warteschlange hinzufügen
+  set(newPlayerRef, playerData);  // Spieler-Daten speichern
+}
+
+// Wenn zwei Spieler in der Warteschlange sind, das Spiel starten und Farben zuweisen
+onValue(playerQueueRef, (snapshot) => {
+  const players = snapshot.val();
+
+  if (players) {
+    const playerIds = Object.keys(players);
+
+    if (playerIds.length === 2) {
+      const player1Id = playerIds[0];
+      const player2Id = playerIds[1];
+
+      // Spieler-Daten aus der Queue abrufen
+      const player1 = players[player1Id];
+      const player2 = players[player2Id];
+
+      // Spielstatus aktualisieren
+      update(gameRef, {
+        player1: { ...player1, color: "blue", x: 1, y: 1 },
+        player2: { ...player2, color: "red", x: 14, y: 1 },
+        status: "active",
+      }).then(() => {
+        // Queue leeren
+        set(playerQueueRef, null);
+      });
     }
-  });
-  
+  }
+});
 
 // Spielfeld und Spieler erstellen
 const map = [
@@ -71,6 +68,7 @@ const map = [
   [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
 ];
 
+let playerPosition = { x: 1, y: 1 }; // Startposition des Spielers
 let direction = { x: 1, y: 0 }; // Startrichtung des Spielers
 
 // Map rendern
@@ -205,54 +203,28 @@ onValue(gameRef, (snapshot) => {
 
     // Spieler 1 hinzufügen
     const player1Div = document.createElement("div");
-    player1Div.id = "player1";
-    player1Div.style.width = "50px";
-    player1Div.style.height = "50px";
-    player1Div.style.backgroundColor = gameData.player1.color;
-    player1Div.style.position = "absolute";
+    player1Div.classList.add("player");
     player1Div.style.left = `${gameData.player1.x * 50}px`;
     player1Div.style.top = `${gameData.player1.y * 50}px`;
+    player1Div.id = "player1";
     gameArea.appendChild(player1Div);
 
     // Spieler 2 hinzufügen
     const player2Div = document.createElement("div");
-    player2Div.id = "player2";
-    player2Div.style.width = "50px";
-    player2Div.style.height = "50px";
-    player2Div.style.backgroundColor = gameData.player2.color;
-    player2Div.style.position = "absolute";
+    player2Div.classList.add("player");
     player2Div.style.left = `${gameData.player2.x * 50}px`;
     player2Div.style.top = `${gameData.player2.y * 50}px`;
+    player2Div.id = "player2";
     gameArea.appendChild(player2Div);
   }
 });
 
-
-// Initialisierung der Map und Spieler
+// Das Spielfeld und Spieler initialisieren
 createMap(map);
 updatePlayerPosition();
 
-// Warteschlangen-Button: Spieler zur Warteschlange hinzufügen
-const joinQueueButton = document.getElementById('joinQueueButton');
-joinQueueButton.addEventListener('click', () => {
-  const playerData = {
-    x: playerPosition.x,
-    y: playerPosition.y,
-    id: Date.now()  // Einzigartige ID für den Spieler
-  };
-  addPlayerToQueue(playerData);  // Spieler zur Warteschlange hinzufügen
-  joinQueueButton.disabled = true;  // Button deaktivieren, um doppelte Anmeldungen zu verhindern
-  joinQueueButton.textContent = "In Warteschlange...";
+// Spieler beitreten
+const joinQueueButton = document.getElementById("joinQueueButton");
+joinQueueButton.addEventListener("click", () => {
+  addPlayerToQueue({ name: "Player 1", color: "blue" });
 });
-
-// Daten des Spielstatus synchronisieren
-onValue(gameRef, (snapshot) => {
-  const data = snapshot.val();
-
-  if (!data || data.status !== "active") {
-    const joinQueueButton = document.getElementById("joinQueueButton");
-    joinQueueButton.disabled = false;
-    joinQueueButton.textContent = "Queue beitreten";
-  }
-});
-
