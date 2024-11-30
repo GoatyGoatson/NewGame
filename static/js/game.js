@@ -1,4 +1,4 @@
-import { gameRef, bulletsRef, update, onValue } from './firebase.js';
+import { gameRef, bulletsRef, update, onValue, push, ref, remove, set } from './firebase.js';
 import { addPlayerToQueue, startMatch } from './matchmaking.js';
 import { map } from './map.js';
 
@@ -30,7 +30,7 @@ function createMap(map) {
 function startMatchTimer() {
   setTimeout(() => {
     endMatch();
-  }, 10 * 60); // 10 Minuten in Millisekunden
+  }, 10 * 60 * 1000); // 10 Minuten in Millisekunden
 }
 
 function endMatch() {
@@ -41,8 +41,8 @@ function endMatch() {
     console.log("Match automatisch beendet.");
   });
 
-  const player1Ref = ref(db, "game/player1");
-  const player2Ref = ref(db, "game/player2");
+  const player1Ref = ref(gameRef, "player1");
+  const player2Ref = ref(gameRef, "player2");
 
   remove(player1Ref);
   remove(player2Ref);
@@ -51,7 +51,7 @@ function endMatch() {
 function clearQueuePeriodically() {
   setInterval(() => {
     clearQueue();
-  }, 10 * 60); // 10 Minuten in Millisekunden
+  }, 10 * 60 * 1000); // 10 Minuten in Millisekunden
 }
 
 function clearQueue() {
@@ -63,11 +63,7 @@ function clearQueue() {
       console.error("Fehler beim Leeren der Queue:", error);
     });
 }
-
-// Starte die automatische Reinigung
 clearQueuePeriodically();
-
-
 
 let currentPlayer = null;
 let isPlayer1 = false;
@@ -134,8 +130,8 @@ function updateBullets() {
         const tile = document.querySelector(`.tile[data-x="${bullet.x}"][data-y="${bullet.y}"]`);
         if (tile) {
           const rect = tile.getBoundingClientRect();
-          bulletElement.style.left = `${rect.left + rect.width/2 - 10}px`;
-          bulletElement.style.top = `${rect.top + rect.height/2 - 10}px`;
+          bulletElement.style.left = `${rect.left + rect.width / 2 - 10}px`;
+          bulletElement.style.top = `${rect.top + rect.height / 2 - 10}px`;
           
           gameArea.appendChild(bulletElement);
         }
@@ -145,7 +141,6 @@ function updateBullets() {
 }
 
 function initGame() {
-
   updateMatchAndQueueStatus();
 
   const joinQueueButton = document.getElementById("joinQueueButton");
@@ -161,8 +156,8 @@ function initGame() {
         if (playerIds.length === 2) {
           startMatch();
           startMatchTimer();
-          /*setupPlayerMovement();
-          updateBullets();*/
+          setupPlayerMovement();
+          updateBullets();
 
           const sortedPlayers = playerIds.sort((a, b) => players[a].timestamp - players[b].timestamp);
           
@@ -198,9 +193,8 @@ function updateMatchAndQueueStatus() {
     const gameStatusElement = document.getElementById("game-status");
 
     if (gameData && gameData.status === "active") {
-      gameStatusElement.textContent = "Aktives Match: " + Player1 + "vs" + Player2;
+      gameStatusElement.textContent = "Aktives Match: Ja";
     } else {
-
       onValue(playerQueueRef, (queueSnapshot) => {
         const players = queueSnapshot.val();
         const queueSize = players ? Object.keys(players).length : 0;

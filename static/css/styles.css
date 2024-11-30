@@ -91,14 +91,26 @@ ul > li:hover {
     background-color: lightblue;
 }
 
-#queue-button {    
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 10px 50px;
-    text-align: center;
+#box {
     margin-top: 20px;
-    border: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: 2px dotted rgb(96 139 168);
+}  
+
+#player-name {
+    text-align: center;
+    padding: 10px 40px;
+    box-sizing: border-box;
+
+}
+
+#queue-button {
+    margin-top: 10px;    
+    padding: 10px 77.5px;
+    text-align: center;
     box-sizing: border-box;
     background-color: black;
     color: white;
