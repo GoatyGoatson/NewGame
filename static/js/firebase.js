@@ -1,5 +1,6 @@
-import { initializeApp } from 'firebase/app';
-import { getDatabase, ref, set, update, push, onValue, remove } from 'firebase/database';
+// Importiere die notwendigen Firebase-Funktionen
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.18.0/firebase-app.js';
+import { getDatabase, ref, set, update, push, onValue, remove } from 'https://www.gstatic.com/firebasejs/9.18.0/firebase-database.js';
 
 const firebaseConfig = {
   apiKey: "AIzaSyBXvE64zxiLq4llMRX-sG8oMC5NZ-n1lBw",
@@ -12,12 +13,16 @@ const firebaseConfig = {
   measurementId: "G-0KBGW2TCQS"
 };
 
+// Firebase-App initialisieren
 const app = initializeApp(firebaseConfig);
 
+// Zugriff auf die Firebase-Datenbank
 const db = getDatabase(app);
 
+// Referenzen zu spezifischen Datenbankpfaden
 const gameRef = ref(db, 'game');
 const playerQueueRef = ref(db, 'queue');
 const bulletsRef = ref(db, 'bullets');
 
+// Exportiere die Funktionen und Referenzen, um sie in anderen Dateien zu verwenden
 export { db, gameRef, playerQueueRef, bulletsRef, set, update, push, onValue, remove };

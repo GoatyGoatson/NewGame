@@ -1,5 +1,5 @@
-import { gameRef, bulletsRef, update, onValue, push, ref, remove, set } from './firebase.js';
-import { addPlayerToQueue, startMatch } from './matchmaking.js';
+import { gameRef, bulletsRef, update, onValue, push, ref, remove, set, playerQueueRef } from './firebase.js';
+import { addPlayerToQueue } from './matchmaking.js';
 import { map } from './map.js';
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -101,6 +101,14 @@ function setupPlayerMovement() {
     }
   });
 }
+
+function isValidMove(x, y) {
+  if (x < 0 || x >= map[0].length || y < 0 || y >= map.length) {
+    return false; // Spieler bewegt sich außerhalb der Karte
+  }
+  return map[y][x] === 0; // Spieler kann nur auf freien Feldern stehen
+}
+
 
 function shootBullet(player, direction) {
   const bulletRef = push(bulletsRef);

@@ -1,4 +1,4 @@
-import { playerQueueRef, gameRef, set, onValue, push } from './firebase.js';
+import { playerQueueRef, gameRef, set, onValue, push, update } from './firebase.js';
 
 document.getElementById('queue-button').onclick = handleQueueButtonClick;
 
