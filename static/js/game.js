@@ -1,95 +1,39 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-app.js";
-import { getAnalytics } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-analytics.js";
+import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-database.js";
 
+// Firebase-Konfiguration
 const firebaseConfig = {
-  apiKey: "AIzaSyBXvE64zxiLq4llMRX-sG8oMC5NZ-n1lBw",
-  authDomain: "bulletbound-70a04.firebaseapp.com",
-  databaseURL: "https://bulletbound-70a04-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "bulletbound-70a04",
-  storageBucket: "bulletbound-70a04.firebasestorage.app",
-  messagingSenderId: "512551082564",
-  appId: "1:512551082564:web:eeded9d53aba74e2f0ba11",
-  measurementId: "G-0KBGW2TCQS"
-};
+    apiKey: "AIzaSyBXvE64zxiLq4llMRX-sG8oMC5NZ-n1lBw",
+    authDomain: "bulletbound-70a04.firebaseapp.com",
+    databaseURL: "https://bulletbound-70a04-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "bulletbound-70a04",
+    storageBucket: "bulletbound-70a04.firebasestorage.app",
+    messagingSenderId: "512551082564",
+    appId: "1:512551082564:web:eeded9d53aba74e2f0ba11",
+    measurementId: "G-0KBGW2TCQS"
+  };
 
-// Initialize Firebase
+// Firebase initialisieren
 const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
+const database = getDatabase(app);
+
+// Referenz auf die Datenbank
+const gameRef = ref(database, "game");
+
+// Daten schreiben
+set(gameRef, {
+  player1: "Player A",
+  player2: "Player B",
+  status: "active",
+});
+
+// Daten lesen
+onValue(gameRef, (snapshot) => {
+  const data = snapshot.val();
+  console.log("Aktueller Spielstatus:", data);
+});
 
 console.log("Firebase erfolgreich initialisiert!");
-
-document.addEventListener("keydown", (event) => {
-    const playerData = {
-      key: event.key, // z. B. "ArrowUp" oder "w"
-      timestamp: Date.now(), // Zeitstempel für die Aktion
-    };
-  
-    // Schreib die Aktion des Spielers in die Datenbank
-    set(ref(db, "game/player1"), playerData);
-  });
-
-  onValue(ref(db, "game/player2"), (snapshot) => {
-    const data = snapshot.val();
-    if (data) {
-      console.log("Spieler 2 bewegt sich:", data.key);
-      // Hier reagierst du auf die Aktion (z. B. Spieler 2 auf dem Bildschirm bewegen)
-    }
-  });
-
-  document.addEventListener("keydown", (event) => {
-    const playerData = {
-      key: event.key,
-      timestamp: Date.now(),
-    };
-  
-    set(ref(db, "game/player2"), playerData); // Spieler 2 schreibt seine Daten
-  });
-  
-  onValue(ref(db, "game/player1"), (snapshot) => {
-    const data = snapshot.val();
-    if (data) {
-      console.log("Spieler 1 bewegt sich:", data.key);
-      // Reagiere auf Spieler 1's Bewegung
-    }
-  });
-  
-  const player1 = document.getElementById("player1");
-  const player2 = document.getElementById("player2");
-  
-  // Spieler 1 Bewegung
-  document.addEventListener("keydown", (event) => {
-    if (event.key === "ArrowRight") player1.style.left = `${player1.offsetLeft + 10}px`;
-    if (event.key === "ArrowLeft") player1.style.left = `${player1.offsetLeft - 10}px`;
-  
-    set(ref(db, "game/player1"), {
-      x: player1.offsetLeft,
-      y: player1.offsetTop,
-    });
-  });
-  
-  // Spieler 2 Bewegung synchronisieren
-  onValue(ref(db, "game/player2"), (snapshot) => {
-    const data = snapshot.val();
-    if (data) {
-      player2.style.left = `${data.x}px`;
-      player2.style.top = `${data.y}px`;
-    }
-  });
-  
-
-
-// Spielerbewegungen speichern
-document.addEventListener("keydown", (event) => {
-  set(ref(db, "game/player1"), {
-    key: event.key,
-  });
-});
-
-// Echtzeit-Bewegungen anderer Spieler abrufen
-onValue(ref(db, "game/player2"), (snapshot) => {
-  const data = snapshot.val();
-  console.log("Bewegung von Spieler 2:", data);
-});
 
 const map = [
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
@@ -103,12 +47,9 @@ const map = [
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
 ];
 
-
 let playerPosition = { x: 1, y: 1 };
-
-direction = { x: 1, y: 0 }; 
-
-let bulletDirection = {...direction};
+let direction = { x: 1, y: 0 }; 
+let bulletDirection = { ...direction };
 
 function createMap(map) {
     const gameArea = document.getElementById('game');
@@ -150,7 +91,13 @@ function updatePlayerPosition() {
     }
 }
 
-document.addEventListener('keydown', (event) => {
+// Spiellogik für Bewegungen und Schießen
+document.addEventListener("keydown", (event) => {
+    const playerData = {
+        key: event.key,
+        timestamp: Date.now(),
+    };
+
     let newX = playerPosition.x;
     let newY = playerPosition.y;
 
@@ -171,19 +118,45 @@ document.addEventListener('keydown', (event) => {
             newX += 1;
             direction = { x: 1, y: 0 }; // Blickrichtung nach rechts
             break;
+        case ' ': // Leertaste zum Schießen
+            shootBullet();
+            break;
     }
 
     if (map[newY] && map[newY][newX] === 0) {
         playerPosition.x = newX;
         playerPosition.y = newY;
         updatePlayerPosition();
+        // Bewegungen in Firebase-Datenbank speichern
+        set(ref(database, "game/player1"), {
+            x: playerPosition.x,
+            y: playerPosition.y,
+        });
+    }
+
+    // Spielerbewegungen speichern
+    set(ref(database, "game/player1"), playerData);
+
+    // Bewegungen von Spieler 2 synchronisieren
+    set(ref(database, "game/player2"), playerData);
+});
+
+// Bewegungen von Spieler 1 und Spieler 2 in Echtzeit abrufen
+onValue(ref(database, "game/player1"), (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+        const player1 = document.getElementById("player1");
+        player1.style.left = `${data.x * 50}px`;
+        player1.style.top = `${data.y * 50}px`;
     }
 });
 
-// Kugeln schießen
-document.addEventListener('keydown', (event) => {
-    if (event.key === ' ') { // Leertaste
-        shootBullet();
+onValue(ref(database, "game/player2"), (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+        const player2 = document.getElementById("player2");
+        player2.style.left = `${data.x * 50}px`;
+        player2.style.top = `${data.y * 50}px`;
     }
 });
 
@@ -204,13 +177,13 @@ function shootBullet() {
 
     gameArea.appendChild(bullet);
 
-    let bulletDirection = { ...direction };
+    let bulletDirection = { ...direction };  // Setze die Richtung hier einmal
 
     // Kugel bewegen
     const interval = setInterval(() => {
         const bulletRect = bullet.getBoundingClientRect();
+        const gameRect = gameArea.getBoundingClientRect();
 
-        // Überprüfen, ob die Kugel außerhalb des Spielfelds ist
         if (
             bulletRect.left < gameRect.left ||
             bulletRect.top < gameRect.top ||
@@ -222,22 +195,6 @@ function shootBullet() {
             return;
         }
 
-        /// Berechne die neuen Koordinaten der Kugel
-        const bulletX = Math.floor((bulletRect.left + bulletRect.right) / 2);
-        const bulletY = Math.floor((bulletRect.top + bulletRect.bottom) / 2);
-
-        // Berechne die Tile-Koordinaten der Kugel
-        const tileX = Math.floor((bulletX - gameRect.left) / 50);  // Hier 50px ist die Kachelgröße
-        const tileY = Math.floor((bulletY - gameRect.top) / 50);   // Hier 50px ist die Kachelgröße
-
-        // Überprüfen, ob die Kugel auf einer Wandkachel ist
-        if (map[tileY] && map[tileY][tileX] === 1) { // 1 bedeutet Wand
-            bullet.remove();
-            clearInterval(interval);
-            return;
-        }
-
-        // Kugel in der festen Richtung bewegen (ändert sich nicht mehr während des Fluges)
         bullet.style.left = `${bullet.offsetLeft + bulletDirection.x * 5}px`;
         bullet.style.top = `${bullet.offsetTop + bulletDirection.y * 5}px`;
     }, 20);
@@ -246,3 +203,4 @@ function shootBullet() {
 // Initialisierung
 createMap(map);
 updatePlayerPosition();
+
