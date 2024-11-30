@@ -22,33 +22,44 @@ const gameRef = ref(db, "game");
 const playerQueueRef = ref(db, "game/queue");  // Warteschlange für Spieler
 
 // Funktion, um einen Spieler zur Warteschlange hinzuzufügen
+// Funktion, um einen Spieler zur Warteschlange hinzuzufügen und ihm eine Farbe zuzuweisen
 function addPlayerToQueue(playerData) {
-  const newPlayerRef = push(playerQueueRef);  // Spieler zur Warteschlange hinzufügen
-  set(newPlayerRef, playerData);  // Spieler-Daten speichern
-}
-
-// Wenn zwei Spieler in der Warteschlange sind, das Spiel starten
-onValue(playerQueueRef, (snapshot) => {
-  const players = snapshot.val();
-  if (players) {
-    const playerIds = Object.keys(players);
-    if (playerIds.length === 2) {
-      // Zwei Spieler sind in der Warteschlange
-      const player1 = players[playerIds[0]];
-      const player2 = players[playerIds[1]];
-
-      // Spieler zuweisen und Spielstatus aktiv setzen
-      update(gameRef, {
-        player1: player1,
-        player2: player2,
-        status: "active",
-      });
-
-      // Warteschlange leeren, nachdem das Spiel begonnen hat
-      set(playerQueueRef, null);
-    }
+    const newPlayerRef = push(playerQueueRef);  // Spieler zur Warteschlange hinzufügen
+    set(newPlayerRef, playerData);  // Spieler-Daten speichern
   }
-});
+  
+  // Wenn zwei Spieler in der Warteschlange sind, das Spiel starten und Farben zuweisen
+  onValue(playerQueueRef, (snapshot) => {
+    const players = snapshot.val();
+    if (players) {
+      const playerIds = Object.keys(players);
+      if (playerIds.length === 2) {
+        // Zwei Spieler sind in der Warteschlange
+        const player1 = players[playerIds[0]];
+        const player2 = players[playerIds[1]];
+  
+        // Den Spielern die Farben und Startpositionen zuweisen
+        player1.color = "blue";
+        player1.x = 1;  // Startposition für Spieler 1
+        player1.y = 1;
+
+        player2.color = "red";
+        player2.x = 14;  // Startposition für Spieler 2
+        player2.y = 1;
+  
+        // Spieler zuweisen und Spielstatus aktiv setzen
+        update(gameRef, {
+          player1: player1,
+          player2: player2,
+          status: "active",
+        });
+  
+        // Warteschlange leeren, nachdem das Spiel begonnen hat
+        set(playerQueueRef, null);
+      }
+    }
+  });
+  
 
 // Spielfeld und Spieler erstellen
 const map = [
