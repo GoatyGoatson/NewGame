@@ -1,6 +1,6 @@
 // Firebase initialisieren
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-app.js";
-import { getDatabase, ref, set, onValue, push, update } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-database.js";
+import { getDatabase, ref, set, onValue, push, update, remove } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-database.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBXvE64zxiLq4llMRX-sG8oMC5NZ-n1lBw",
@@ -19,43 +19,9 @@ const db = getDatabase(app);
 
 // Referenzen für die Datenbank
 const gameRef = ref(db, "game");
-const playerQueueRef = ref(db, "game/queue");  // Warteschlange für Spieler
+const playerQueueRef = ref(db, "game/queue");
 
-// Funktion, um einen Spieler zur Warteschlange hinzuzufügen
-function addPlayerToQueue(playerData) {
-  const newPlayerRef = push(playerQueueRef);  // Spieler zur Warteschlange hinzufügen
-  set(newPlayerRef, playerData);  // Spieler-Daten speichern
-}
-
-// Wenn zwei Spieler in der Warteschlange sind, das Spiel starten und Farben zuweisen
-onValue(playerQueueRef, (snapshot) => {
-  const players = snapshot.val();
-
-  if (players) {
-    const playerIds = Object.keys(players);
-
-    if (playerIds.length === 2) {
-      const player1Id = playerIds[0];
-      const player2Id = playerIds[1];
-
-      // Spieler-Daten aus der Queue abrufen
-      const player1 = players[player1Id];
-      const player2 = players[player2Id];
-
-      // Spielstatus aktualisieren
-      update(gameRef, {
-        player1: { ...player1, color: "blue", x: 1, y: 1 },
-        player2: { ...player2, color: "red", x: 14, y: 1 },
-        status: "active",
-      }).then(() => {
-        // Queue leeren
-        set(playerQueueRef, null);
-      });
-    }
-  }
-});
-
-// Spielfeld und Spieler erstellen
+// Spielfeld definieren
 const map = [
   [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
   [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
@@ -68,13 +34,14 @@ const map = [
   [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
 ];
 
-let playerPosition = { x: 1, y: 1 }; // Startposition des Spielers
-let direction = { x: 1, y: 0 }; // Startrichtung des Spielers
+// Globale Spielvariablen
+let currentPlayer = null;
+let isPlayer1 = false;
 
 // Map rendern
 function createMap(map) {
   const gameArea = document.getElementById('game');
-  gameArea.innerHTML = '';  // Clear the game area
+  gameArea.innerHTML = '';
 
   map.forEach((row, y) => {
     row.forEach((cell, x) => {
@@ -94,137 +61,164 @@ function createMap(map) {
   });
 }
 
-// Spielerposition aktualisieren
-function updatePlayerPosition() {
-  const tiles = document.querySelectorAll('.tile');
-  tiles.forEach((tile) => {
-    tile.classList.remove('player');
-    const playerDiv = tile.querySelector('.player');
-    if (playerDiv) playerDiv.remove();
+// Spieler zur Queue hinzufügen
+function addPlayerToQueue() {
+  const newPlayerRef = push(playerQueueRef);
+  set(newPlayerRef, {
+    name: `Player-${Math.floor(Math.random() * 1000)}`,
+    timestamp: Date.now()
   });
-
-  const playerTile = document.querySelector(
-    `.tile[data-x="${playerPosition.x}"][data-y="${playerPosition.y}"]`
-  );
-  if (playerTile) {
-    const playerElement = document.createElement('div');
-    playerElement.classList.add('player');
-    playerTile.appendChild(playerElement);
-  }
 }
 
-// Spielerbewegung
-document.addEventListener('keydown', (event) => {
-  let newX = playerPosition.x;
-  let newY = playerPosition.y;
-
-  switch (event.key) {
-    case 'w': newY -= 1; direction = { x: 0, y: -1 }; break;
-    case 's': newY += 1; direction = { x: 0, y: 1 }; break;
-    case 'a': newX -= 1; direction = { x: -1, y: 0 }; break;
-    case 'd': newX += 1; direction = { x: 1, y: 0 }; break;
-  }
-
-  if (map[newY] && map[newY][newX] === 0) {
-    playerPosition.x = newX;
-    playerPosition.y = newY;
-    updatePlayerPosition();
-    // Bewege die Position in der Datenbank
-    set(ref(db, "game/player1"), {
-      x: playerPosition.x,
-      y: playerPosition.y,
-    });
-  }
-});
-
-// Kugel schießen
-document.addEventListener('keydown', (event) => {
-  if (event.key === ' ') { // Leertaste
-    shootBullet();
-  }
-});
-
-function shootBullet() {
-  const gameArea = document.getElementById('game');
-  const bullet = document.createElement('div');
-  bullet.classList.add('bullet');
-
-  const playerTile = document.querySelector(
-    `.tile[data-x="${playerPosition.x}"][data-y="${playerPosition.y}"]`
-  );
-  const rect = playerTile.getBoundingClientRect();
-  const gameRect = gameArea.getBoundingClientRect();
-
-  bullet.style.left = `${rect.left - gameRect.left + 25}px`;
-  bullet.style.top = `${rect.top - gameRect.top + 25}px`;
-
-  gameArea.appendChild(bullet);
-
-  let bulletDirection = { ...direction };
-
-  const interval = setInterval(() => {
-    const bulletRect = bullet.getBoundingClientRect();
-
-    if (
-      bulletRect.left < gameRect.left ||
-      bulletRect.top < gameRect.top ||
-      bulletRect.right > gameRect.right ||
-      bulletRect.bottom > gameRect.bottom
-    ) {
-      bullet.remove();
-      clearInterval(interval);
-      return;
-    }
-
-    const bulletX = bulletRect.left + bulletRect.width / 2;
-    const bulletY = bulletRect.top + bulletRect.height / 2;
-
-    const tileX = Math.floor((bulletX - gameRect.left) / 50);
-    const tileY = Math.floor((bulletY - gameRect.top) / 50);
-
-    if (map[tileY] && map[tileY][tileX] === 1) {
-      bullet.remove();
-      clearInterval(interval);
-      return;
-    }
-
-    bullet.style.left = `${bullet.offsetLeft + bulletDirection.x * 5}px`;
-    bullet.style.top = `${bullet.offsetTop + bulletDirection.y * 5}px`;
-  }, 20);
+// Spielerbewegung validieren
+function isValidMove(x, y) {
+  return map[y] && map[y][x] === 0;
 }
 
-// Spieler 1 Bewegungen synchronisieren
+// Spieler-Bewegungslogik
+function setupPlayerMovement() {
+  document.addEventListener('keydown', (event) => {
+    if (!currentPlayer) return;
+
+    let newX = currentPlayer.x;
+    let newY = currentPlayer.y;
+    let direction = { x: 0, y: 0 };
+
+    switch (event.key) {
+      case 'w': newY -= 1; direction = { x: 0, y: -1 }; break;
+      case 's': newY += 1; direction = { x: 0, y: 1 }; break;
+      case 'a': newX -= 1; direction = { x: -1, y: 0 }; break;
+      case 'd': newX += 1; direction = { x: 1, y: 0 }; break;
+    }
+
+    if (isValidMove(newX, newY)) {
+      currentPlayer.x = newX;
+      currentPlayer.y = newY;
+
+      // Spielerbewegung in Firebase aktualisieren
+      const playerPath = isPlayer1 ? "player1" : "player2";
+      update(gameRef, {
+        [playerPath]: {
+          ...currentPlayer,
+          x: newX,
+          y: newY
+        }
+      });
+    }
+  });
+}
+
+// Schießen implementieren
+function setupShooting() {
+  document.addEventListener('keydown', (event) => {
+    if (event.key === ' ' && currentPlayer) {
+      const bulletRef = push(ref(db, 'game/bullets'));
+      set(bulletRef, {
+        x: currentPlayer.x,
+        y: currentPlayer.y,
+        owner: isPlayer1 ? 'player1' : 'player2'
+      });
+    }
+  });
+}
+
+// Game State Listener
 onValue(gameRef, (snapshot) => {
   const gameData = snapshot.val();
 
   if (gameData && gameData.status === "active") {
     const gameArea = document.getElementById("game");
-    gameArea.innerHTML = ""; // Spielfeld zurücksetzen
 
-    // Spieler 1 hinzufügen
-    const player1Div = document.createElement("div");
-    player1Div.classList.add("player");
-    player1Div.style.left = `${gameData.player1.x * 50}px`;
-    player1Div.style.top = `${gameData.player1.y * 50}px`;
-    player1Div.id = "player1";
-    gameArea.appendChild(player1Div);
+    // Spieler 1 aktualisieren
+    if (gameData.player1) {
+      updatePlayerInGame(gameData.player1, 'player1', gameArea, 'blue');
+      if (!currentPlayer && isPlayer1) {
+        currentPlayer = { ...gameData.player1 };
+      }
+    }
 
-    // Spieler 2 hinzufügen
-    const player2Div = document.createElement("div");
-    player2Div.classList.add("player");
-    player2Div.style.left = `${gameData.player2.x * 50}px`;
-    player2Div.style.top = `${gameData.player2.y * 50}px`;
-    player2Div.id = "player2";
-    gameArea.appendChild(player2Div);
+    // Spieler 2 aktualisieren
+    if (gameData.player2) {
+      updatePlayerInGame(gameData.player2, 'player2', gameArea, 'red');
+      if (!currentPlayer && !isPlayer1) {
+        currentPlayer = { ...gameData.player2 };
+      }
+    }
   }
 });
 
-// Das Spielfeld und Spieler initialisieren
-createMap(map);
-updatePlayerPosition();
+// Spieler in der Gamearea aktualisieren
+function updatePlayerInGame(playerData, id, gameArea, color) {
+  let playerElement = document.getElementById(id);
+  
+  if (!playerElement) {
+    playerElement = document.createElement("div");
+    playerElement.classList.add("player");
+    playerElement.id = id;
+    playerElement.style.backgroundColor = color;
+    gameArea.appendChild(playerElement);
+  }
 
-// Spieler beitreten
-const joinQueueButton = document.getElementById("joinQueueButton");
-joinQueueButton.addEventListener("click", () => {
-  addPlayerToQueue({ name: "Player 1", color: "blue" });
+  playerElement.style.left = `${playerData.x * 50}px`;
+  playerElement.style.top = `${playerData.y * 50}px`;
+}
+
+// Queue Listener
+onValue(playerQueueRef, (snapshot) => {
+  const players = snapshot.val();
+
+  if (players) {
+    const playerIds = Object.keys(players);
+
+    if (playerIds.length === 2) {
+      // Sortiere Spieler nach Beitrittszeitpunkt
+      const sortedPlayers = playerIds.sort((a, b) => 
+        players[a].timestamp - players[b].timestamp
+      );
+
+      // Starte das Spiel mit zugewiesenen Positionen
+      update(gameRef, {
+        player1: { 
+          ...players[sortedPlayers[0]], 
+          x: 1, 
+          y: 1, 
+          color: 'blue' 
+        },
+        player2: { 
+          ...players[sortedPlayers[1]], 
+          x: 14, 
+          y: 1, 
+          color: 'red' 
+        },
+        status: "active"
+      }).then(() => {
+        // Queue leeren
+        set(playerQueueRef, null);
+      });
+    }
+  }
 });
+
+// Initialisierung
+function initGame() {
+  createMap(map);
+  setupPlayerMovement();
+  setupShooting();
+
+  const joinQueueButton = document.getElementById("joinQueueButton");
+  joinQueueButton.addEventListener("click", () => {
+    addPlayerToQueue();
+    
+    // Setze Spielerrolle basierend auf Beitrittszeitpunkt
+    onValue(playerQueueRef, (snapshot) => {
+      const players = snapshot.val();
+      if (players) {
+        const playerIds = Object.keys(players);
+        isPlayer1 = playerIds[0] === Object.keys(players).find(id => players[id]);
+      }
+    });
+  });
+}
+
+// Starte das Spiel
+initGame();
