@@ -18,6 +18,7 @@ function createMap(map) {
         gameArea.appendChild(tile);
       });
     });
+    console.log("Map erstellt!");
   }
   
   export { createMap };

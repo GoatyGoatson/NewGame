@@ -1,4 +1,5 @@
 import { playerQueueRef, gameRef, set, onValue, push, update } from './firebase.js';
+import { createMap } from './ui.js';
 
 document.getElementById('queue-button').onclick = handleQueueButtonClick;
 
@@ -50,6 +51,7 @@ function observeQueue(button) {
         button.textContent = "Match gefunden! Starte Spiel...";
         button.style.backgroundColor = "green";
 
+        createMap(map);
         startMatch(players); 
       }
     }
