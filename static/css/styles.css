@@ -91,6 +91,10 @@ ul > li:hover {
     background-color: lightblue;
 }
 
+#joinQueueButton {
+    background-color: purple;
+}
+
 #game {
     display: grid;
     grid-template-columns: repeat(16, 50px); /* 16 Spalten */
