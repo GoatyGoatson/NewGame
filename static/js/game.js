@@ -1,7 +1,6 @@
-// game.js
 import { gameRef, bulletsRef, update, onValue } from './firebase.js';
 import { addPlayerToQueue, startMatch } from './matchmaking.js';
-import { map } from './map.js'; // Importiere die Map aus der map.js
+import { map } from './map.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   createMap(map);
@@ -28,8 +27,27 @@ function createMap(map) {
   });
 }
 
+document.getElementById('queue-button').onclick = function() {
+  const button = document.getElementById('queue-button');
+  button.textContent = "Warten auf Gegner...";
+  button.style
+
+  addPlayerToQueue();
+  
+  onValue(playerQueueRef, (snapshot) => {
+    const players = snapshot.val();
+    if (players) {
+      const playerIds = Object.keys(players);
+
+      if (playerIds.length === 2) {
+        button.textContent = "Match gefunden! Starte Spiel...";
+      }
+    }
+  });
+};
 
 
+/*
 let currentPlayer = null;
 let isPlayer1 = false;
 
@@ -104,26 +122,7 @@ function updateBullets() {
       });
     }
   });
-}
-
-document.getElementById('queue-button').onclick = function() {
-  const button = document.getElementById('queue-button');
-  button.textContent = "Warten auf Gegner...";
-
-  addPlayerToQueue();
-  
-  onValue(playerQueueRef, (snapshot) => {
-    const players = snapshot.val();
-    if (players) {
-      const playerIds = Object.keys(players);
-
-      if (playerIds.length === 2) {
-        button.textContent = "Match gefunden! Starte Spiel...";
-      }
-    }
-  });
-};
-
+}*/
 
 function initGame() {
   updateMatchAndQueueStatus();
