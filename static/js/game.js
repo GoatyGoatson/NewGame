@@ -1,6 +1,6 @@
 import { gameRef, bulletsRef, update, onValue, push, ref, remove, set, playerQueueRef } from './firebase.js';
 import { addPlayerToQueue } from './matchmaking.js';
-import { map } from './map.js';
+import { gameMap } from './ui.js'; 
 
 function startMatchTimer() {
   setTimeout(() => {
@@ -78,10 +78,10 @@ function setupPlayerMovement() {
 }
 
 function isValidMove(x, y) {
-  if (x < 0 || x >= map[0].length || y < 0 || y >= map.length) {
+  if (x < 0 || x >= gameMap[0].length || y < 0 || y >= gameMap.length) {
     return false; // Spieler bewegt sich außerhalb der Karte
   }
-  return map[y][x] === 0; // Spieler kann nur auf freien Feldern stehen
+  return gameMap[y][x] === 0; // Spieler kann nur auf freien Feldern stehen
 }
 
 
