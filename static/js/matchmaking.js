@@ -51,7 +51,7 @@ function observeQueue(button) {
         button.textContent = "Match gefunden! Starte Spiel...";
         button.style.backgroundColor = "green";
 
-        createMap(map);
+        createMap(gameMap);
         startMatch(players); 
       }
     }
