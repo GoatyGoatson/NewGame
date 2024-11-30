@@ -180,13 +180,13 @@ function initGame() {
         const playerIds = Object.keys(players);
         
         if (playerIds.length === 2) {
-          setupPlayerMovement();
+          startMatch();
           startMatchTimer();
-          updateBullets();
+          /*setupPlayerMovement();
+          updateBullets();*/
 
           const sortedPlayers = playerIds.sort((a, b) => players[a].timestamp - players[b].timestamp);
           
-          // Setze die Spieler in das Spiel und starte das Match
           update(gameRef, {
             player1: { 
               ...players[sortedPlayers[0]], 
