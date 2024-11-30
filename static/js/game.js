@@ -1,5 +1,5 @@
 import { gameRef, bulletsRef, update, onValue, push, ref, remove, set, playerQueueRef } from './firebase.js';
-import { addPlayerToQueue } from './matchmaking.js';
+import { handleQueueButtonClick } from './matchmaking.js';
 import { gameMap, renderPlayers, createMap } from './ui.js';
 
 class GameManager {
@@ -43,7 +43,7 @@ class GameManager {
   setupJoinQueueButton() {
     const joinQueueButton = document.getElementById("joinQueueButton");
     joinQueueButton.addEventListener("click", () => {
-      addPlayerToQueue();
+      handleQueueButtonClick();
     });
   }
 
