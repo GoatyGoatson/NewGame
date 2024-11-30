@@ -3,14 +3,14 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/9.17.1/firebas
 import { getDatabase, ref, set, onValue, push, update } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-database.js";
 
 const firebaseConfig = {
-    apiKey: "AIzaSyBXvE64zxiLq4llMRX-sG8oMC5NZ-n1lBw",
-    authDomain: "bulletbound-70a04.firebaseapp.com",
-    databaseURL: "https://bulletbound-70a04-default-rtdb.europe-west1.firebasedatabase.app",
-    projectId: "bulletbound-70a04",
-    storageBucket: "bulletbound-70a04.firebasestorage.app",
-    messagingSenderId: "512551082564",
-    appId: "1:512551082564:web:eeded9d53aba74e2f0ba11",
-    measurementId: "G-0KBGW2TCQS"
+  apiKey: "AIzaSyBXvE64zxiLq4llMRX-sG8oMC5NZ-n1lBw",
+  authDomain: "bulletbound-70a04.firebaseapp.com",
+  databaseURL: "https://bulletbound-70a04-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "bulletbound-70a04",
+  storageBucket: "bulletbound-70a04.firebasestorage.app",
+  messagingSenderId: "512551082564",
+  appId: "1:512551082564:web:eeded9d53aba74e2f0ba11",
+  measurementId: "G-0KBGW2TCQS"
 };
 
 // Firebase initialisieren
@@ -70,7 +70,7 @@ let direction = { x: 1, y: 0 }; // Startrichtung des Spielers
 // Map rendern
 function createMap(map) {
   const gameArea = document.getElementById('game');
-  gameArea.innerHTML = '';  // Spielfeld leeren
+  gameArea.innerHTML = '';  // Clear the game area
 
   map.forEach((row, y) => {
     row.forEach((cell, x) => {
@@ -172,9 +172,8 @@ function shootBullet() {
       return;
     }
 
-    const bulletX = Math.floor((bulletRect.left + bulletRect.right) / 2);
-    const bulletY = Math.floor((bulletRect.top + bulletRect.bottom) / 2
-    );
+    const bulletX = bulletRect.left + bulletRect.width / 2;
+    const bulletY = bulletRect.top + bulletRect.height / 2;
 
     const tileX = Math.floor((bulletX - gameRect.left) / 50);
     const tileY = Math.floor((bulletY - gameRect.top) / 50);
