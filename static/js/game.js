@@ -198,7 +198,7 @@ function updateMatchAndQueueStatus() {
     const gameStatusElement = document.getElementById("game-status");
 
     if (gameData && gameData.status === "active") {
-      gameStatusElement.textContent = `Aktives Match: Player1 vs Player2`;
+      gameStatusElement.textContent = "Aktives Match: " + Player1 + "vs" + Player2;
     } else {
 
       onValue(playerQueueRef, (queueSnapshot) => {

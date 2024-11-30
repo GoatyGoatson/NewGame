@@ -49,13 +49,11 @@ function observeQueue(button) {
         button.textContent = "Match gefunden! Starte Spiel...";
         button.style.backgroundColor = "green";
 
-        // Hier kannst du die Match-Start-Logik aufrufen
-        startMatch();
+        startMatch(players); 
       }
     }
   });
 }
-
 
 function resetButton(button) {
   button.textContent = "Queue beitreten";
@@ -63,40 +61,34 @@ function resetButton(button) {
   button.disabled = false;
 }
 
+function startMatch(players) {
+  const playerIds = Object.keys(players);
 
-function startMatch() {
-  console.log("Match gestartet");
-  onValue(playerQueueRef, (snapshot) => {
-    const players = snapshot.val();
-    if (players) {
-      const playerIds = Object.keys(players);
+  const sortedPlayers = playerIds.sort((a, b) =>
+    players[a].timestamp - players[b].timestamp
+  );
 
-      if (playerIds.length === 2) {
-        const sortedPlayers = playerIds.sort((a, b) => 
-          players[a].timestamp - players[b].timestamp
-        );
-
-        update(gameRef, {
-          player1: { 
-            ...players[sortedPlayers[0]], 
-            x: 1, 
-            y: 1, 
-            color: 'blue',
-            health: 100
-          },
-          player2: { 
-            ...players[sortedPlayers[1]], 
-            x: 14, 
-            y: 1, 
-            color: 'red',
-            health: 100
-          },
-          status: "active"
-        }).then(() => {
-          set(playerQueueRef, null);
-        });
-      }
-    }
+  update(gameRef, {
+    player1: { 
+      ...players[sortedPlayers[0]], 
+      x: 1, 
+      y: 1, 
+      color: 'blue',
+      health: 100
+    },
+    player2: { 
+      ...players[sortedPlayers[1]], 
+      x: 14, 
+      y: 1, 
+      color: 'red',
+      health: 100
+    },
+    status: "active"
+  }).then(() => {
+    console.log("Match erfolgreich gestartet!");
+    set(playerQueueRef, null); // Queue zurücksetzen
+  }).catch((error) => {
+    console.error("Fehler beim Starten des Matches:", error);
   });
 }
 
