@@ -71,8 +71,6 @@ const map = [
   [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
 ];
 
-let playerPosition = { x: 1, y: 1 };
-
 let direction = { x: 1, y: 0 }; // Startrichtung des Spielers
 
 // Map rendern
