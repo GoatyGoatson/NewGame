@@ -1,5 +1,5 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-app.js";
-import { getDatabase, ref, set, push, update, remove, onValue } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-database.js";
+import { initializeApp } from 'firebase/app';
+import { getDatabase, ref, set, update, push, onValue, remove } from 'firebase/database';
 
 const firebaseConfig = {
   apiKey: "AIzaSyBXvE64zxiLq4llMRX-sG8oMC5NZ-n1lBw",
@@ -13,10 +13,11 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
+
 const db = getDatabase(app);
 
-const gameRef = ref(db, "game");
-const playerQueueRef = ref(db, "game/queue");
-const bulletsRef = ref(db, "game/bullets");
+const gameRef = ref(db, 'game');
+const playerQueueRef = ref(db, 'queue');
+const bulletsRef = ref(db, 'bullets');
 
-export { gameRef, playerQueueRef, bulletsRef, set, push, update, remove, onValue };
+export { db, gameRef, playerQueueRef, bulletsRef, set, update, push, onValue, remove };
