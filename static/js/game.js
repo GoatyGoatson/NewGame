@@ -106,8 +106,26 @@ function updateBullets() {
   });
 }
 
+document.getElementById('queue-button').onclick = function() {
+  const button = document.getElementById('queue-button');
+  button.textContent = "Warten auf Gegner...";
+
+  addPlayerToQueue();
+  
+  onValue(playerQueueRef, (snapshot) => {
+    const players = snapshot.val();
+    if (players) {
+      const playerIds = Object.keys(players);
+
+      if (playerIds.length === 2) {
+        button.textContent = "Match gefunden! Starte Spiel...";
+      }
+    }
+  });
+};
+
+
 function initGame() {
-  // Initiale Setup
   updateMatchAndQueueStatus();
 
   const joinQueueButton = document.getElementById("joinQueueButton");
@@ -163,7 +181,7 @@ function updateMatchAndQueueStatus() {
     if (gameData && gameData.status === "active") {
       gameStatusElement.textContent = `Aktives Match: Player1 vs Player2`;
     } else {
-      // Hole den Queue-Status
+
       onValue(playerQueueRef, (queueSnapshot) => {
         const players = queueSnapshot.val();
         const queueSize = players ? Object.keys(players).length : 0;
