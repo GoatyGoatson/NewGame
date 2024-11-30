@@ -1,3 +1,99 @@
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyBXvE64zxiLq4llMRX-sG8oMC5NZ-n1lBw",
+  authDomain: "bulletbound-70a04.firebaseapp.com",
+  databaseURL: "https://bulletbound-70a04-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "bulletbound-70a04",
+  storageBucket: "bulletbound-70a04.firebasestorage.app",
+  messagingSenderId: "512551082564",
+  appId: "1:512551082564:web:eeded9d53aba74e2f0ba11",
+  measurementId: "G-0KBGW2TCQS"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
+
+document.addEventListener("keydown", (event) => {
+    const playerData = {
+      key: event.key, // z. B. "ArrowUp" oder "w"
+      timestamp: Date.now(), // Zeitstempel für die Aktion
+    };
+  
+    // Schreib die Aktion des Spielers in die Datenbank
+    set(ref(db, "game/player1"), playerData);
+  });
+
+  onValue(ref(db, "game/player2"), (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+      console.log("Spieler 2 bewegt sich:", data.key);
+      // Hier reagierst du auf die Aktion (z. B. Spieler 2 auf dem Bildschirm bewegen)
+    }
+  });
+
+  document.addEventListener("keydown", (event) => {
+    const playerData = {
+      key: event.key,
+      timestamp: Date.now(),
+    };
+  
+    set(ref(db, "game/player2"), playerData); // Spieler 2 schreibt seine Daten
+  });
+  
+  onValue(ref(db, "game/player1"), (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+      console.log("Spieler 1 bewegt sich:", data.key);
+      // Reagiere auf Spieler 1's Bewegung
+    }
+  });
+  
+  const player1 = document.getElementById("player1");
+  const player2 = document.getElementById("player2");
+  
+  // Spieler 1 Bewegung
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "ArrowRight") player1.style.left = `${player1.offsetLeft + 10}px`;
+    if (event.key === "ArrowLeft") player1.style.left = `${player1.offsetLeft - 10}px`;
+  
+    set(ref(db, "game/player1"), {
+      x: player1.offsetLeft,
+      y: player1.offsetTop,
+    });
+  });
+  
+  // Spieler 2 Bewegung synchronisieren
+  onValue(ref(db, "game/player2"), (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+      player2.style.left = `${data.x}px`;
+      player2.style.top = `${data.y}px`;
+    }
+  });
+  
+
+
+// Spielerbewegungen speichern
+document.addEventListener("keydown", (event) => {
+  set(ref(db, "game/player1"), {
+    key: event.key,
+  });
+});
+
+// Echtzeit-Bewegungen anderer Spieler abrufen
+onValue(ref(db, "game/player2"), (snapshot) => {
+  const data = snapshot.val();
+  console.log("Bewegung von Spieler 2:", data);
+});
+
 const map = [
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
     [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
@@ -149,7 +245,6 @@ function shootBullet() {
         bullet.style.top = `${bullet.offsetTop + bulletDirection.y * 5}px`;
     }, 20);
 }
-
 
 // Initialisierung
 createMap(map);
