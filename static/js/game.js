@@ -1,7 +1,7 @@
+// Firebase initialisieren
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-app.js";
-import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-database.js";
+import { getDatabase, ref, set, onValue, push, update } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-database.js";
 
-// Firebase-Konfiguration
 const firebaseConfig = {
     apiKey: "AIzaSyBXvE64zxiLq4llMRX-sG8oMC5NZ-n1lBw",
     authDomain: "bulletbound-70a04.firebaseapp.com",
@@ -15,192 +15,218 @@ const firebaseConfig = {
 
 // Firebase initialisieren
 const app = initializeApp(firebaseConfig);
-const database = getDatabase(app);
+const db = getDatabase(app);
 
-// Referenz auf die Datenbank
-const gameRef = ref(database, "game");
+// Referenzen für die Datenbank
+const gameRef = ref(db, "game");
+const playerQueueRef = ref(db, "game/queue");  // Warteschlange für Spieler
 
-// Daten schreiben
-set(gameRef, {
-  player1: "Player A",
-  player2: "Player B",
-  status: "active",
+// Funktion, um einen Spieler zur Warteschlange hinzuzufügen
+function addPlayerToQueue(playerData) {
+  const newPlayerRef = push(playerQueueRef);  // Spieler zur Warteschlange hinzufügen
+  set(newPlayerRef, playerData);  // Spieler-Daten speichern
+}
+
+// Wenn zwei Spieler in der Warteschlange sind, das Spiel starten
+onValue(playerQueueRef, (snapshot) => {
+  const players = snapshot.val();
+  if (players) {
+    const playerIds = Object.keys(players);
+    if (playerIds.length === 2) {
+      // Zwei Spieler sind in der Warteschlange
+      const player1 = players[playerIds[0]];
+      const player2 = players[playerIds[1]];
+
+      // Spieler zuweisen und Spielstatus aktiv setzen
+      update(gameRef, {
+        player1: player1,
+        player2: player2,
+        status: "active",
+      });
+
+      // Warteschlange leeren, nachdem das Spiel begonnen hat
+      set(playerQueueRef, null);
+    }
+  }
 });
 
-// Daten lesen
-onValue(gameRef, (snapshot) => {
-  const data = snapshot.val();
-  console.log("Aktueller Spielstatus:", data);
-});
-
-console.log("Firebase erfolgreich initialisiert!");
-
+// Spielfeld und Spieler erstellen
 const map = [
-    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-    [1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 1, 1],
-    [1, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1],
-    [1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1],
-    [1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 1, 1, 1],
-    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-    [1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1],
-    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 1, 1],
+  [1, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1],
+  [1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 1, 1, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1],
+  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
 ];
 
 let playerPosition = { x: 1, y: 1 };
-let direction = { x: 1, y: 0 }; 
-let bulletDirection = { ...direction };
 
+let direction = { x: 1, y: 0 }; // Startrichtung des Spielers
+
+// Map rendern
 function createMap(map) {
-    const gameArea = document.getElementById('game');
-    gameArea.innerHTML = '';
+  const gameArea = document.getElementById('game');
+  gameArea.innerHTML = '';  // Clear the game area
 
-    map.forEach((row, y) => {
-        row.forEach((cell, x) => {
-            const tile = document.createElement('div');
-            tile.classList.add('tile');
-            tile.dataset.x = x;
-            tile.dataset.y = y;
+  map.forEach((row, y) => {
+    row.forEach((cell, x) => {
+      const tile = document.createElement('div');
+      tile.classList.add('tile');
+      tile.dataset.x = x;
+      tile.dataset.y = y;
 
-            if (cell === 1) {
-                tile.classList.add('wall');
-            } else if (cell === 0) {
-                tile.classList.add('floor');
-            }
+      if (cell === 1) {
+        tile.classList.add('wall');
+      } else if (cell === 0) {
+        tile.classList.add('floor');
+      }
 
-            gameArea.appendChild(tile);
-        });
+      gameArea.appendChild(tile);
     });
+  });
 }
 
+// Spielerposition aktualisieren
 function updatePlayerPosition() {
-    const tiles = document.querySelectorAll('.tile');
-    tiles.forEach((tile) => {
-        tile.classList.remove('player');
-        const playerDiv = tile.querySelector('.player');
-        if (playerDiv) playerDiv.remove(); // Entferne alte Spieler-Elemente
-    });
+  const tiles = document.querySelectorAll('.tile');
+  tiles.forEach((tile) => {
+    tile.classList.remove('player');
+    const playerDiv = tile.querySelector('.player');
+    if (playerDiv) playerDiv.remove();
+  });
 
-    const playerTile = document.querySelector(
-        `.tile[data-x="${playerPosition.x}"][data-y="${playerPosition.y}"]`
-    );
-    if (playerTile) {
-        const playerElement = document.createElement('div');
-        playerElement.classList.add('player');
-        playerTile.appendChild(playerElement);
-    }
+  const playerTile = document.querySelector(
+    `.tile[data-x="${playerPosition.x}"][data-y="${playerPosition.y}"]`
+  );
+  if (playerTile) {
+    const playerElement = document.createElement('div');
+    playerElement.classList.add('player');
+    playerTile.appendChild(playerElement);
+  }
 }
 
-// Spiellogik für Bewegungen und Schießen
-document.addEventListener("keydown", (event) => {
-    const playerData = {
-        key: event.key,
-        timestamp: Date.now(),
-    };
+// Spielerbewegung
+document.addEventListener('keydown', (event) => {
+  let newX = playerPosition.x;
+  let newY = playerPosition.y;
 
-    let newX = playerPosition.x;
-    let newY = playerPosition.y;
+  switch (event.key) {
+    case 'w': newY -= 1; direction = { x: 0, y: -1 }; break;
+    case 's': newY += 1; direction = { x: 0, y: 1 }; break;
+    case 'a': newX -= 1; direction = { x: -1, y: 0 }; break;
+    case 'd': newX += 1; direction = { x: 1, y: 0 }; break;
+  }
 
-    switch (event.key) {
-        case 'w': // Nach oben
-            newY -= 1;
-            direction = { x: 0, y: -1 }; // Blickrichtung nach oben
-            break;
-        case 's': // Nach unten
-            newY += 1;
-            direction = { x: 0, y: 1 }; // Blickrichtung nach unten
-            break;
-        case 'a': // Nach links
-            newX -= 1;
-            direction = { x: -1, y: 0 }; // Blickrichtung nach links
-            break;
-        case 'd': // Nach rechts
-            newX += 1;
-            direction = { x: 1, y: 0 }; // Blickrichtung nach rechts
-            break;
-        case ' ': // Leertaste zum Schießen
-            shootBullet();
-            break;
-    }
-
-    if (map[newY] && map[newY][newX] === 0) {
-        playerPosition.x = newX;
-        playerPosition.y = newY;
-        updatePlayerPosition();
-        // Bewegungen in Firebase-Datenbank speichern
-        set(ref(database, "game/player1"), {
-            x: playerPosition.x,
-            y: playerPosition.y,
-        });
-    }
-
-    // Spielerbewegungen speichern
-    set(ref(database, "game/player1"), playerData);
-
-    // Bewegungen von Spieler 2 synchronisieren
-    set(ref(database, "game/player2"), playerData);
+  if (map[newY] && map[newY][newX] === 0) {
+    playerPosition.x = newX;
+    playerPosition.y = newY;
+    updatePlayerPosition();
+    // Bewege die Position in der Datenbank
+    set(ref(db, "game/player1"), {
+      x: playerPosition.x,
+      y: playerPosition.y,
+    });
+  }
 });
 
-// Bewegungen von Spieler 1 und Spieler 2 in Echtzeit abrufen
-onValue(ref(database, "game/player1"), (snapshot) => {
-    const data = snapshot.val();
-    if (data) {
-        const player1 = document.getElementById("player1");
-        player1.style.left = `${data.x * 50}px`;
-        player1.style.top = `${data.y * 50}px`;
-    }
-});
-
-onValue(ref(database, "game/player2"), (snapshot) => {
-    const data = snapshot.val();
-    if (data) {
-        const player2 = document.getElementById("player2");
-        player2.style.left = `${data.x * 50}px`;
-        player2.style.top = `${data.y * 50}px`;
-    }
+// Kugel schießen
+document.addEventListener('keydown', (event) => {
+  if (event.key === ' ') { // Leertaste
+    shootBullet();
+  }
 });
 
 function shootBullet() {
-    const gameArea = document.getElementById('game');
-    const bullet = document.createElement('div');
-    bullet.classList.add('bullet');
+  const gameArea = document.getElementById('game');
+  const bullet = document.createElement('div');
+  bullet.classList.add('bullet');
 
-    // Kugel startet bei der Spielerposition
-    const playerTile = document.querySelector(
-        `.tile[data-x="${playerPosition.x}"][data-y="${playerPosition.y}"]`
-    );
-    const rect = playerTile.getBoundingClientRect();
-    const gameRect = gameArea.getBoundingClientRect();
+  const playerTile = document.querySelector(
+    `.tile[data-x="${playerPosition.x}"][data-y="${playerPosition.y}"]`
+  );
+  const rect = playerTile.getBoundingClientRect();
+  const gameRect = gameArea.getBoundingClientRect();
 
-    bullet.style.left = `${rect.left - gameRect.left + 25}px`;
-    bullet.style.top = `${rect.top - gameRect.top + 25}px`;
+  bullet.style.left = `${rect.left - gameRect.left + 25}px`;
+  bullet.style.top = `${rect.top - gameRect.top + 25}px`;
 
-    gameArea.appendChild(bullet);
+  gameArea.appendChild(bullet);
 
-    let bulletDirection = { ...direction };  // Setze die Richtung hier einmal
+  let bulletDirection = { ...direction };
 
-    // Kugel bewegen
-    const interval = setInterval(() => {
-        const bulletRect = bullet.getBoundingClientRect();
-        const gameRect = gameArea.getBoundingClientRect();
+  const interval = setInterval(() => {
+    const bulletRect = bullet.getBoundingClientRect();
 
-        if (
-            bulletRect.left < gameRect.left ||
-            bulletRect.top < gameRect.top ||
-            bulletRect.right > gameRect.right ||
-            bulletRect.bottom > gameRect.bottom
-        ) {
-            bullet.remove();
-            clearInterval(interval);
-            return;
-        }
+    if (
+      bulletRect.left < gameRect.left ||
+      bulletRect.top < gameRect.top ||
+      bulletRect.right > gameRect.right ||
+      bulletRect.bottom > gameRect.bottom
+    ) {
+      bullet.remove();
+      clearInterval(interval);
+      return;
+    }
 
-        bullet.style.left = `${bullet.offsetLeft + bulletDirection.x * 5}px`;
-        bullet.style.top = `${bullet.offsetTop + bulletDirection.y * 5}px`;
-    }, 20);
+    const bulletX = Math.floor((bulletRect.left + bulletRect.right) / 2);
+    const bulletY = Math.floor((bulletRect.top + bulletRect.bottom) / 2);
+
+    const tileX = Math.floor((bulletX - gameRect.left) / 50);
+    const tileY = Math.floor((bulletY - gameRect.top) / 50);
+
+    if (map[tileY] && map[tileY][tileX] === 1) {
+      bullet.remove();
+      clearInterval(interval);
+      return;
+    }
+
+    bullet.style.left = `${bullet.offsetLeft + bulletDirection.x * 5}px`;
+    bullet.style.top = `${bullet.offsetTop + bulletDirection.y * 5}px`;
+  }, 20);
 }
 
-// Initialisierung
+// Spieler 1 Bewegungen synchronisieren
+onValue(ref(db, "game/player1"), (snapshot) => {
+  const data = snapshot.val();
+  if (data) {
+    const player1 = document.getElementById("player1");
+    player1.style.left = `${data.x * 50}px`;
+    player1.style.top = `${data.y * 50}px`;
+  }
+});
+
+// Spieler 2 Bewegungen synchronisieren
+onValue(ref(db, "game/player2"), (snapshot) => {
+  const data = snapshot.val();
+  if (data) {
+    const player2 = document.getElementById("player2");
+    player2.style.left = `${data.x * 50}px`;
+    player2.style.top = `${data.y * 50}px`;
+  }
+});
+
+// Initialisierung der Map und Spieler
 createMap(map);
 updatePlayerPosition();
+
+// Wenn der Spieler zum ersten Mal das Spiel betritt, wird er zur Warteschlange hinzugefügt
+const playerData = {
+  x: playerPosition.x,
+  y: playerPosition.y,
+  id: Date.now()  // Einzigartige ID für den Spieler
+};
+addPlayerToQueue(playerData);
+
+// Daten des Spielstatus synchronisieren
+onValue(gameRef, (snapshot) => {
+  const data = snapshot.val();
+  if (data && data.status === "active") {
+    console.log("Spiel gestartet zwischen:", data.player1, "und", data.player2);
+  }
+});
+
 
