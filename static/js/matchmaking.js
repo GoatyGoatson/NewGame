@@ -1,5 +1,5 @@
 import { playerQueueRef, gameRef, set, onValue, push, update } from './firebase.js';
-import { createMap } from './ui.js';
+import { createMap, gameMap } from './ui.js';  // Importiere gameMap
 
 document.getElementById('queue-button').onclick = handleQueueButtonClick;
 
