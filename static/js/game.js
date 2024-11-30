@@ -27,27 +27,6 @@ function createMap(map) {
   });
 }
 
-document.getElementById('queue-button').onclick = function() {
-  const button = document.getElementById('queue-button');
-  button.textContent = "Warten auf Gegner...";
-  button.style.backgroundColor = "purple";
-  button.disabled = true;
-
-  addPlayerToQueue();
-  
-  onValue(playerQueueRef, (snapshot) => {
-    const players = snapshot.val();
-    if (players) {
-      const playerIds = Object.keys(players);
-
-      if (playerIds.length === 2) {
-        button.textContent = "Match gefunden! Starte Spiel...";
-        button.style.backgroundColor = "green";
-      }
-    }
-  });
-};
-
 function startMatchTimer() {
   setTimeout(() => {
     endMatch();
