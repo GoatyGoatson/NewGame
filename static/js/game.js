@@ -32,23 +32,23 @@ function addPlayerToQueue(playerData) {
 onValue(playerQueueRef, (snapshot) => {
   const players = snapshot.val();
 
-  // Prüfen, ob die Warteschlange existiert und zwei Spieler enthält
   if (players) {
     const playerIds = Object.keys(players);
+
+    // Prüfen, ob zwei Spieler in der Queue sind
     if (playerIds.length === 2) {
-      // Spieler-Daten aus der Queue holen
-      const player1Id = playerIds[0]; // Erster Spieler
-      const player2Id = playerIds[1]; // Zweiter Spieler
+      const player1Id = playerIds[0];
+      const player2Id = playerIds[1];
 
       const player1 = players[player1Id];
       const player2 = players[player2Id];
 
-      // Spielstatus überprüfen, bevor Daten überschrieben werden
+      // Existierende Spielzustände prüfen, um Überschreibungen zu vermeiden
       onValue(gameRef, (gameSnapshot) => {
         const gameData = gameSnapshot.val();
 
-        if (!gameData || !gameData.status || gameData.status !== "active") {
-          // Spieler initialisieren
+        if (!gameData || gameData.status !== "active") {
+          // Spieler zuweisen und Positionen festlegen
           player1.color = "blue";
           player1.x = 1;
           player1.y = 1;
@@ -57,20 +57,21 @@ onValue(playerQueueRef, (snapshot) => {
           player2.x = 14;
           player2.y = 1;
 
-          // Spieler und Spielstatus in die Datenbank schreiben
+          // Daten in die Datenbank schreiben
           update(gameRef, {
             player1: player1,
             player2: player2,
             status: "active",
+          }).then(() => {
+            // Queue erst leeren, nachdem die Spieler initialisiert wurden
+            set(playerQueueRef, null);
           });
-
-          // Warteschlange leeren
-          set(playerQueueRef, null);
         }
-      }, { onlyOnce: true }); // Sicherstellen, dass der Listener nur einmal ausgelöst wird
+      }, { onlyOnce: true });
     }
   }
 });
+
 
 
 // Spielfeld und Spieler erstellen
