@@ -94,7 +94,8 @@ ul > li:hover {
 #joinQueueButton {
     background-color: black;
     color: white;
-    padding: 20px 50px;
+    padding: 10px 50px;
+    font-weight: bold;
     cursor: pointer;
 }
 

@@ -283,10 +283,28 @@ onValue(playerQueueRef, (snapshot) => {
   }
 });
 
+function updateMatchAndQueueStatus() {
+  onValue(gameRef, (snapshot) => {
+    const gameData = snapshot.val();
+    const gameStatusElement = document.getElementById("game-status");
+
+    if (gameData && gameData.status === "active") {
+      gameStatusElement.textContent = `Active Match: Player1 vs Player2`;
+    } else {
+      onValue(playerQueueRef, (queueSnapshot) => {
+        const players = queueSnapshot.val();
+        const queueSize = players ? Object.keys(players).length : 0;
+        gameStatusElement.textContent = `Queue: ${queueSize} player(s)`;
+      });
+    }
+  });
+}
+
 function initGame() {
   createMap(map);
   setupPlayerMovement();
   updateBullets();
+  updateMatchAndQueueStatus();
 
   const joinQueueButton = document.getElementById("joinQueueButton");
   joinQueueButton.addEventListener("click", () => {
