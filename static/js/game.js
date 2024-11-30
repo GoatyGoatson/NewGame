@@ -11,7 +11,7 @@ const firebaseConfig = {
     messagingSenderId: "512551082564",
     appId: "1:512551082564:web:eeded9d53aba74e2f0ba11",
     measurementId: "G-0KBGW2TCQS"
-  };
+};
 
 // Firebase initialisieren
 const app = initializeApp(firebaseConfig);
@@ -70,7 +70,7 @@ let direction = { x: 1, y: 0 }; // Startrichtung des Spielers
 // Map rendern
 function createMap(map) {
   const gameArea = document.getElementById('game');
-  gameArea.innerHTML = '';  // Clear the game area
+  gameArea.innerHTML = '';  // Spielfeld leeren
 
   map.forEach((row, y) => {
     row.forEach((cell, x) => {
@@ -173,7 +173,8 @@ function shootBullet() {
     }
 
     const bulletX = Math.floor((bulletRect.left + bulletRect.right) / 2);
-    const bulletY = Math.floor((bulletRect.top + bulletRect.bottom) / 2);
+    const bulletY = Math.floor((bulletRect.top + bulletRect.bottom) / 2
+    );
 
     const tileX = Math.floor((bulletX - gameRect.left) / 50);
     const tileY = Math.floor((bulletY - gameRect.top) / 50);
@@ -213,20 +214,25 @@ onValue(ref(db, "game/player2"), (snapshot) => {
 createMap(map);
 updatePlayerPosition();
 
-// Wenn der Spieler zum ersten Mal das Spiel betritt, wird er zur Warteschlange hinzugefügt
-const playerData = {
-  x: playerPosition.x,
-  y: playerPosition.y,
-  id: Date.now()  // Einzigartige ID für den Spieler
-};
-addPlayerToQueue(playerData);
+// Warteschlangen-Button: Spieler zur Warteschlange hinzufügen
+const joinQueueButton = document.getElementById('joinQueueButton');
+joinQueueButton.addEventListener('click', () => {
+  const playerData = {
+    x: playerPosition.x,
+    y: playerPosition.y,
+    id: Date.now()  // Einzigartige ID für den Spieler
+  };
+  addPlayerToQueue(playerData);  // Spieler zur Warteschlange hinzufügen
+  joinQueueButton.disabled = true;  // Button deaktivieren, um doppelte Anmeldungen zu verhindern
+  joinQueueButton.textContent = "In Warteschlange...";
+});
 
 // Daten des Spielstatus synchronisieren
 onValue(gameRef, (snapshot) => {
   const data = snapshot.val();
   if (data && data.status === "active") {
     console.log("Spiel gestartet zwischen:", data.player1, "und", data.player2);
+    // Hier könnte man den Spieler in das aktive Spiel überführen
+    // oder eine neue Spieloberfläche anzeigen.
   }
 });
-
-
