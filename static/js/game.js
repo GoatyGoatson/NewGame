@@ -3,29 +3,31 @@ import { gameRef, bulletsRef, update, onValue } from './firebase.js';
 import { addPlayerToQueue, startMatch } from './matchmaking.js';
 import { map } from './map.js'; // Importiere die Map aus der map.js
 
-// Hier die Firebase-Initiierung und andere Spielvariablen
+document.addEventListener('DOMContentLoaded', () => {
+  createMap(map);
+});
 
 function createMap(map) {
+  console.log('Creating map...');
+  console.log(map);
   const gameArea = document.getElementById('game');
-  gameArea.innerHTML = '';  // Leert das Spielfeld
-
+  gameArea.innerHTML = '';
   map.forEach((row, y) => {
     row.forEach((cell, x) => {
       const tile = document.createElement('div');
       tile.classList.add('tile');
       tile.dataset.x = x;
       tile.dataset.y = y;
-
       if (cell === 1) {
         tile.classList.add('wall');
       } else if (cell === 0) {
         tile.classList.add('floor');
       }
-
       gameArea.appendChild(tile);
     });
   });
 }
+
 
 
 let currentPlayer = null;
