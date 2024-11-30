@@ -107,14 +107,70 @@ function updateBullets() {
 }
 
 function initGame() {
+  // Initiale Setup
+  updateMatchAndQueueStatus();
+
   const joinQueueButton = document.getElementById("joinQueueButton");
   joinQueueButton.addEventListener("click", () => {
     addPlayerToQueue();
-    startMatch();
-  });
 
-  setupPlayerMovement();
-  updateBullets();
+    // Prüfe regelmäßig, ob ein Match gefunden wurde
+    onValue(playerQueueRef, (snapshot) => {
+      const players = snapshot.val();
+      if (players) {
+        const playerIds = Object.keys(players);
+        
+        // Überprüfe, ob genau 2 Spieler in der Queue sind
+        if (playerIds.length === 2) {
+          // Sortiere Spieler nach ihrem Timestamp (erste Anmeldung zuerst)
+          const sortedPlayers = playerIds.sort((a, b) => players[a].timestamp - players[b].timestamp);
+          
+          // Setze die Spieler in das Spiel und starte das Match
+          update(gameRef, {
+            player1: { 
+              ...players[sortedPlayers[0]], 
+              x: 1, 
+              y: 1, 
+              color: 'blue',
+              health: 100
+            },
+            player2: { 
+              ...players[sortedPlayers[1]], 
+              x: 14, 
+              y: 1, 
+              color: 'red',
+              health: 100
+            },
+            status: "active"
+          }).then(() => {
+            // Lösche die Queue, da das Match nun startet
+            set(playerQueueRef, null);
+            
+            // Map wird erst jetzt erstellt
+            createMap(map);
+          });
+        }
+      }
+    });
+  });
+}
+
+function updateMatchAndQueueStatus() {
+  onValue(gameRef, (snapshot) => {
+    const gameData = snapshot.val();
+    const gameStatusElement = document.getElementById("game-status");
+
+    if (gameData && gameData.status === "active") {
+      gameStatusElement.textContent = `Aktives Match: Player1 vs Player2`;
+    } else {
+      // Hole den Queue-Status
+      onValue(playerQueueRef, (queueSnapshot) => {
+        const players = queueSnapshot.val();
+        const queueSize = players ? Object.keys(players).length : 0;
+        gameStatusElement.textContent = `Queue: ${queueSize} Spieler`;
+      });
+    }
+  });
 }
 
 initGame();
