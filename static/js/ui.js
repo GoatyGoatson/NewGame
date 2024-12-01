@@ -33,7 +33,6 @@ const gameMap = [
 function renderPlayers(player1, player2) {
   const gameArea = document.getElementById('game');
   
-  // Entferne alte Spieler-Elemente
   document.querySelectorAll('.player').forEach(el => el.remove());
   
   // Spieler 1

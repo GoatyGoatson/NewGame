@@ -25,4 +25,4 @@ const playerQueueRef = ref(db, 'queue');
 const bulletsRef = ref(db, 'bullets');
 
 // Exportiere die Funktionen und Referenzen, um sie in anderen Dateien zu verwenden
-export { db, gameRef, playerQueueRef, bulletsRef, set, update, push, onValue, remove };
+export { db, gameRef, playerQueueRef, bulletsRef, ref, set, update, push, onValue, remove };
