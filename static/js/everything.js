@@ -50,7 +50,7 @@ document.getElementById('queue-button').addEventListener('click', () => {
           // Add as player1
           isPlayer1 = true;
           queue.push(playerName);
-          update(queueRef, queue);
+          set(queueRef, queue); // Use set instead of update
           generateSessionId();
           alert('Waiting for another player...');
       } else {
