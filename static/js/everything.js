@@ -142,7 +142,7 @@ document.getElementById('queue-button').addEventListener('click', () => {
           set(ref(db, `games/${sessionId}/player1`), { name: player1Name });
           set(ref(db, `games/${sessionId}/player2`), { name: playerName });
 
-          set(queueRef, []); // Clear queue after assigning players
+          set(ref(db, `games/queue`), {name: player1Name}); // Clear queue after assigning players
 
           alert('Match found! Starting game...');
           startGame();
