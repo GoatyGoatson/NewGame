@@ -13,337 +13,89 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-
 const db = getDatabase(app);
 
-const gameRef = ref(db, 'game');
-const playerQueueRef = ref(db, 'queue');
-const bulletsRef = ref(db, 'bullets');
-const gameSessionRef = ref(db, 'gamesession');
-
-
-const gameMap = [
-    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-    [1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 1, 1],
-    [1, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1],
-    [1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1],
-    [1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 1, 1, 1],
-    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-    [1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1],
-    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-   ];
-   
-function createMap(gameMap) {
-    const gameArea = document.getElementById('game');
-    gameArea.innerHTML = '';
-    gameMap.forEach((row, y) => {
-      row.forEach((cell, x) => {
-        const tile = document.createElement('div');
-        tile.classList.add('tile');
-        tile.dataset.x = x;
-        tile.dataset.y = y;
-        if (cell === 1) {
-          tile.classList.add('wall');
-        } else if (cell === 0) {
-          tile.classList.add('floor');
-        }
-        gameArea.appendChild(tile);
-      });
-    });
-    console.log("Map erstellt!");
-}
-
-document.getElementById("queue-button").onclick = handleQueueButtonClick;
-
-function handleQueueButtonClick() {
-	const button = document.getElementById("queue-button");
-  
-	button.textContent = "Warten auf Gegner...";
-	button.style.backgroundColor = "purple";
-	button.disabled = true;
-
-	const playerName = getPlayerName();
-	if (!playerName) {
-		alert("Bitte gib einen gültigen Namen ein.");
-		resetButton(button);
-		return;
-	}
-	addPlayerToQueue(playerName);
-	observeQueue(button);
-}
-
-function getPlayerName() {
-	const playerNameInput = document.getElementById("player-name");
-	return playerNameInput.value.trim();
-}
-
-function addPlayerToQueue(playerName) {
-	const newPlayerRef = push(playerQueueRef);
-	set(newPlayerRef, {
-		name: playerName,
-		timestamp: Date.now(),
-		health: 100,
-	}).then(() => {
-		console.log("Spieler ${playerName} wurde der Queue hinzugefügt.");
-		document.getElementById("player-name").disabled = true;
-	}).catch((error) => {
-		console.error("Fehler beim Hinzufügen des Spielers zur Queue:", error);
-		alert("Fehler beim Beitreten zur Queue. Bitte versuche es erneut.");
-		resetButton(document.getElementById("queue-button")); // Button zurücksetzen
-	});
-}
-
-function observeQueue(button) {
-	onValue(playerQueueRef, (snapshot) => {
-		const players = snapshot.val();
-		if (players) {
-			const playerIds = Object.keys(players);
-			if (playerIds.length === 2) {
-				button.textContent = "Match gefunden! Starte Spiel...";
-				button.style.backgroundColor = "green";
-				createMap(gameMap);
-				startMatch(players);
-			}
-		}
-	});
-}
-
-function renderPlayers(player1, player2) {
-    const gameArea = document.getElementById('game');
-    
-    document.querySelectorAll('.player').forEach(el => el.remove());
-    
-    if (player1) {
-      const player1Tile = document.querySelector(`.tile[data-x="${player1.x}"][data-y="${player1.y}"]`);
-      if (player1Tile) {
-        const player1Element = document.createElement('div');
-        player1Element.classList.add('player', 'player1');
-        player1Element.style.backgroundColor = player1.color || 'blue';
-        player1Tile.appendChild(player1Element);
-      }
-    }
-    
-    if (player2) {
-      const player2Tile = document.querySelector(`.tile[data-x="${player2.x}"][data-y="${player2.y}"]`);
-      if (player2Tile) {
-        const player2Element = document.createElement('div');
-        player2Element.classList.add('player', 'player2');
-        player2Element.style.backgroundColor = player2.color || 'red';
-        player2Tile.appendChild(player2Element);
-      }
-    }
-  }
-
-function startMatch(players) {
-	const playerIds = Object.keys(players);
-	const sortedPlayers = playerIds.sort(
-		(a, b) => players[a].timestamp - players[b].timestamp);
-	update(gameRef, {
-		player1: {
-			...players[sortedPlayers[0]],
-			x: 1,
-			y: 1,
-			color: "blue",
-			health: 100,
-		},
-		player2: {
-			...players[sortedPlayers[1]],
-			x: 14,
-			y: 1,
-			color: "red",
-			health: 100,
-		},
-		status: "active",
-	}).then(() => {
-		console.log("Match erfolgreich gestargt!");
-		set(playerQueueRef, null);
-		renderPlayers({
-			x: 1,
-			y: 1,
-			color: "blue"
-		}, {
-			x: 14,
-			y: 1,
-			color: "red"
-		});
-	}).catch((error) => {
-		console.error("Fehler beim Starten des Matches:", error);
-	});
-}
-
-let currentPlayer = null;
+// Game setup
+let sessionId = null;
 let isPlayer1 = false;
 
-
-
-function isValidMove(x, y) {
-  if (x < 0 || x >= gameMap[0].length || y < 0 || y >= gameMap.length) {
-    return false; // Spieler bewegt sich außerhalb der Karte
-  }
-  return gameMap[y][x] === 0; // Spieler kann nur auf freien Feldern stehen
+// Generate a unique session ID for the game
+function generateSessionId() {
+    sessionId = 'game_' + Date.now();
+    set(ref(db, `games/${sessionId}`), {
+        startTime: Date.now(),
+        player1: null,
+        player2: null
+    });
+    console.log(`Session ID created: ${sessionId}`);
 }
 
+// Queue logic
+document.getElementById('queue-button').addEventListener('click', () => {
+    const playerName = document.getElementById('player-name').value;
+    if (!playerName) {
+        alert('Please enter your name!');
+        return;
+    }
 
-function shootBullet(player, direction) {
-  const bulletRef = push(bulletsRef);
-  set(bulletRef, {
-    x: player.x,
-    y: player.y,
-    dx: direction.x,
-    dy: direction.y,
-    owner: isPlayer1 ? 'player1' : 'player2',
-    timestamp: Date.now()
-  });
-}
-
-function updateBullets() {
-  onValue(bulletsRef, (snapshot) => {
-    const bullets = snapshot.val();
-    const gameArea = document.getElementById('game');
-    
-    document.querySelectorAll('.bullet').forEach(b => b.remove());
-
-    if (bullets) {
-      Object.keys(bullets).forEach(key => {
-        const bullet = bullets[key];
-        const bulletElement = document.createElement('div');
-        bulletElement.classList.add('bullet');
-        
-        const tile = document.querySelector(`.tile[data-x="${bullet.x}"][data-y="${bullet.y}"]`);
-        if (tile) {
-          const rect = tile.getBoundingClientRect();
-          bulletElement.style.left = `${rect.left + rect.width / 2 - 10}px`;
-          bulletElement.style.top = `${rect.top + rect.height / 2 - 10}px`;
-          
-          gameArea.appendChild(bulletElement);
+    onValue(ref(db, 'queue'), (snapshot) => {
+        const queue = snapshot.val() || [];
+        if (queue.length === 0) {
+            // Add player to queue as player1
+            isPlayer1 = true;
+            set(ref(db, 'queue'), [playerName]);
+            generateSessionId();
+        } else {
+            // Add player to game as player2
+            const [player1] = queue;
+            set(ref(db, `games/${sessionId}/player1`), player1);
+            set(ref(db, `games/${sessionId}/player2`), playerName);
+            set(ref(db, 'queue'), []); // Clear queue
+            startGame();
         }
-      });
+    });
+});
+
+// Start game
+function startGame() {
+    setTimeout(() => {
+        alert('Game Over!');
+        endGame();
+    }, 180000); // End game after 3 minutes
+}
+
+// End game
+function endGame() {
+    if (sessionId) {
+        set(ref(db, `games/${sessionId}`), null);
+        sessionId = null;
     }
-  });
 }
 
-function updateMatchAndQueueStatus() {
-  onValue(gameRef, (snapshot) => {
-    const gameData = snapshot.val();
-    const gameStatusElement = document.getElementById("game-status");
+// Player movement
+document.addEventListener('keydown', (event) => {
+    if (!sessionId) return;
 
-    if (gameData && gameData.status === "active") {
-      gameStatusElement.textContent = "Aktives Match: Ja";
-    } else {
-      onValue(playerQueueRef, (queueSnapshot) => {
-        const players = queueSnapshot.val();
-        const queueSize = players ? Object.keys(players).length : 0;
-        gameStatusElement.textContent = `Queue: ${queueSize} Spieler`;
-      });
+    const playerPath = isPlayer1 ? 'player1Position' : 'player2Position';
+    const currentPosition = { /* logic to get current position */ };
+
+    let newPosition;
+    switch (event.key) {
+        case 'ArrowUp': newPosition = { x: currentPosition.x, y: currentPosition.y - 1 }; break;
+        case 'ArrowDown': newPosition = { x: currentPosition.x, y: currentPosition.y + 1 }; break;
+        case 'ArrowLeft': newPosition = { x: currentPosition.x - 1, y: currentPosition.y }; break;
+        case 'ArrowRight': newPosition = { x: currentPosition.x + 1, y: currentPosition.y }; break;
+        default: return;
     }
-  });
-}
-function initGame() {
-  onValue(playerQueueRef, (snapshot) => {
-      const players = snapshot.val();
-      if (players) {
-          const playerIds = Object.keys(players);
-          
-          if (playerIds.length === 2) {
-              const sortedPlayers = playerIds.sort((a, b) => players[a].timestamp - players[b].timestamp);
-              
-              // Spieler-Initialisierung
-              const player1Data = {
-                  ...players[sortedPlayers[0]], 
-                  x: 1, 
-                  y: 1, 
-                  color: 'blue',
-                  health: 100
-              };
-              
-              const player2Data = {
-                  ...players[sortedPlayers[1]], 
-                  x: 14, 
-                  y: 1, 
-                  color: 'red',
-                  health: 100
-              };
 
-              // Spieldaten aktualisieren
-              update(gameRef, {
-                  player1: player1Data,
-                  player2: player2Data,
-                  status: "active"
-              }).then(() => {
-                  // Queue leeren
-                  set(playerQueueRef, null);
-                  
-                  // Karte erstellen
-                  createMap(gameMap);
-                  
-                  // Spielerbewegung einrichten
-                  setupPlayerMovement(player1Data, player2Data);
-                  
-                  // Bullets updaten
-                  updateBullets();
-                  
-                  // Match-Status aktualisieren
-                  updateMatchAndQueueStatus();
-              });
-          }
-      }
-  });
-}
+    update(ref(db, `games/${sessionId}/${playerPath}`), newPosition);
+});
 
-function setupPlayerMovement(player1Data, player2Data) {
-  document.addEventListener('keydown', (event) => {
-      // Aktiven Spieler und dessen Eigenschaften bestimmen
-      const player = window.isPlayer1 ? player1Data : player2Data;
-      const playerPath = window.isPlayer1 ? "player1" : "player2";
-
-      let newX = player.x;
-      let newY = player.y;
-      let direction = { x: 0, y: 0 };
-
-      switch (event.key) {
-          case 'w': newY -= 1; direction = { x: 0, y: -1 }; break;
-          case 's': newY += 1; direction = { x: 0, y: 1 }; break;
-          case 'a': newX -= 1; direction = { x: -1, y: 0 }; break;
-          case 'd': newX += 1; direction = { x: 1, y: 0 }; break;
-          case ' ': 
-              shootBullet(player, direction);
-              return;
-      }
-
-      if (isValidMove(newX, newY)) {
-          // Spielerposition aktualisieren
-          player.x = newX;
-          player.y = newY;
-
-          // Datenbank-Update
-          update(gameRef, {
-              [playerPath]: {
-                  ...player,
-                  x: newX,
-                  y: newY
-              }
-          });
-      }
-  });
-}
-
-function updatePlayerPositions() {
-  onValue(gameRef, (snapshot) => {
-      const gameData = snapshot.val();
-      if (gameData && gameData.status === "active") {
-          // Spieler-Rendering
-          renderPlayers(gameData.player1, gameData.player2);
-          
-          // Spieler-Rollen setzen
-          window.isPlayer1 = true; // TODO: Logik zur Bestimmung des Spielers implementieren
-          console.log("Spielerpositionen aktualisiert:", gameData);
-      }
-  });
-}
-
-// Initialisierung aufrufen
-initGame();
-updatePlayerPositions();
-updateMatchAndQueueStatus();
-
+// Shooting logic
+document.addEventListener('keydown', (event) => {
+    if (event.key === 'Space') {
+        const bullet = { /* logic for bullet position and direction */ };
+        // Update Firebase with bullet data
+        update(ref(db, `games/${sessionId}/bullets`), { bullet });
+    }
+});
