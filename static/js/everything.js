@@ -19,7 +19,7 @@ const db = getDatabase(app);
 const gameRef = ref(db, 'game');
 const playerQueueRef = ref(db, 'queue');
 const bulletsRef = ref(db, 'bullets');
-const gameSessionRef = ref(db, 'gameSession');
+const gameSessionRef = ref(db, 'gamesession');
 
 
 const gameMap = [
