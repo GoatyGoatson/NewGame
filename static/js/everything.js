@@ -1,17 +1,10 @@
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.18.0/firebase-app.js';
-import { getDatabase, ref, set, update, push, onValue, remove } from 'https://www.gstatic.com/firebasejs/9.18.0/firebase-database.js';
+// Firebase setup
+import { initializeApp } from "firebase/app";
+import { getDatabase, ref, set, onValue, update } from "firebase/database";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBXvE64zxiLq4llMRX-sG8oMC5NZ-n1lBw",
-  authDomain: "bulletbound-70a04.firebaseapp.com",
-  databaseURL: "https://bulletbound-70a04-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "bulletbound-70a04",
-  storageBucket: "bulletbound-70a04.firebasestorage.app",
-  messagingSenderId: "512551082564",
-  appId: "1:512551082564:web:eeded9d53aba74e2f0ba11",
-  measurementId: "G-0KBGW2TCQS"
+    // Your Firebase config here
 };
-
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
@@ -19,57 +12,82 @@ const db = getDatabase(app);
 let sessionId = null;
 let isPlayer1 = false;
 
-// Generate a unique session ID for the game
+// Game Map
+const map = [
+    ['wall', 'wall', 'wall', 'wall', 'wall', 'wall', 'wall', 'wall'],
+    ['wall', 'floor', 'floor', 'floor', 'floor', 'floor', 'floor', 'wall'],
+    ['wall', 'floor', 'wall', 'floor', 'wall', 'floor', 'floor', 'wall'],
+    ['wall', 'floor', 'wall', 'floor', 'wall', 'floor', 'floor', 'wall'],
+    ['wall', 'floor', 'floor', 'floor', 'wall', 'floor', 'floor', 'wall'],
+    ['wall', 'wall', 'wall', 'wall', 'wall', 'wall', 'wall', 'wall'],
+];
+
+// Generate a unique session ID
 function generateSessionId() {
     sessionId = 'game_' + Date.now();
     set(ref(db, `games/${sessionId}`), {
         startTime: Date.now(),
+        map,
         player1: null,
-        player2: null
+        player2: null,
     });
     console.log(`Session ID created: ${sessionId}`);
 }
 
-// Queue logic for matchmaking
+// Render the map
+function renderMap() {
+    const gameContainer = document.getElementById('game');
+    gameContainer.innerHTML = ''; // Clear previous content
+    map.forEach((row, y) => {
+        row.forEach((tile, x) => {
+            const tileElement = document.createElement('div');
+            tileElement.classList.add('tile', tile);
+            tileElement.dataset.x = x;
+            tileElement.dataset.y = y;
+            gameContainer.appendChild(tileElement);
+        });
+    });
+}
+
+// Queue logic
 document.getElementById('queue-button').addEventListener('click', () => {
-  const playerName = document.getElementById('player-name').value;
-  if (!playerName) {
-      alert('Please enter your name!');
-      return;
-  }
+    const playerName = document.getElementById('player-name').value;
+    if (!playerName) {
+        alert('Please enter your name!');
+        return;
+    }
 
-  const queueRef = ref(db, 'queue');
-  onValue(queueRef, (snapshot) => {
-      let queue = snapshot.val() || [];
-      if (queue.includes(playerName)) {
-          alert('You are already in the queue!');
-          return;
-      }
+    const queueRef = ref(db, 'queue');
+    onValue(queueRef, (snapshot) => {
+        let queue = snapshot.val() || [];
+        if (queue.includes(playerName)) {
+            alert('You are already in the queue!');
+            return;
+        }
 
-      if (queue.length === 0) {
-          // Add as player1
-          isPlayer1 = true;
-          queue.push(playerName);
-          set(queueRef, queue); // Use set instead of update
-          generateSessionId();
-          alert('Waiting for another player...');
-      } else {
-          // Add as player2 and start game
-          const [player1] = queue;
-          set(ref(db, `games/${sessionId}/player1`), player1);
-          set(ref(db, `games/${sessionId}/player2`), playerName);
-          set(queueRef, []); // Clear the queue
-          startGame();
-      }
-  }, { onlyOnce: true }); // Only trigger once for this action
+        if (queue.length === 0) {
+            isPlayer1 = true;
+            queue.push(playerName);
+            set(queueRef, queue);
+            generateSessionId();
+            alert('Waiting for another player...');
+        } else {
+            const [player1] = queue;
+            set(ref(db, `games/${sessionId}/player1`), player1);
+            set(ref(db, `games/${sessionId}/player2`), playerName);
+            set(queueRef, []); // Clear queue
+            startGame();
+        }
+    }, { onlyOnce: true });
 });
 
 // Start game
 function startGame() {
+    renderMap();
     setTimeout(() => {
         alert('Game Over!');
         endGame();
-    }, 180000); // End game after 3 minutes
+    }, 180000); // 3-minute timer
 }
 
 // End game
@@ -85,7 +103,7 @@ document.addEventListener('keydown', (event) => {
     if (!sessionId) return;
 
     const playerPath = isPlayer1 ? 'player1Position' : 'player2Position';
-    const currentPosition = { /* logic to get current position */ };
+    const currentPosition = { /* Retrieve from Firebase */ };
 
     let newPosition;
     switch (event.key) {
@@ -103,7 +121,6 @@ document.addEventListener('keydown', (event) => {
 document.addEventListener('keydown', (event) => {
     if (event.key === 'Space') {
         const bullet = { /* logic for bullet position and direction */ };
-        // Update Firebase with bullet data
         update(ref(db, `games/${sessionId}/bullets`), { bullet });
     }
 });
