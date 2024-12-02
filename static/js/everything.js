@@ -142,7 +142,8 @@ document.getElementById('queue-button').addEventListener('click', () => {
           set(ref(db, `games/${sessionId}/player1`), { name: player1Name });
           set(ref(db, `games/${sessionId}/player2`), { name: playerName });
 
-          set(ref(db, `games/queue`), {name: player1Name}); // Clear queue after assigning players
+          const queueRef = ref(db, `queue`);
+          remove (queueRef)
 
           alert('Match found! Starting game...');
           startGame();
@@ -150,7 +151,6 @@ document.getElementById('queue-button').addEventListener('click', () => {
   }, { onlyOnce: true }); // Only trigger once for this action
 });
 
-// End game
 // End game and delete the session from the database
 function endGame() {
   if (sessionId) {
