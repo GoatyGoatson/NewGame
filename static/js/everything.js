@@ -19,7 +19,7 @@ let sessionId = null;
 let isPlayer1 = false;
 
 // Game Map (16x9 grid)
-const map_name = "";
+const map_name = "...";
 
 const map_uno = [
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
@@ -129,15 +129,21 @@ document.getElementById('queue-button').addEventListener('click', () => {
           queue.push(playerName);
           set(queueRef, queue);
           generateSessionId(); // Create a new session
-          set(ref(db, `games/${sessionId}/player1`), { name: playerName });
-          alert('Waiting for another player...');
+
+          const info = document.getElementById("game-statis");
+          info.textContent = 'Waiting for another player...';
+          
+
       } else {
           // Player 2 joins the game
           const player1Name = queue[0]; // The first player in the queue
           queue.push(playerName);
+
           set(ref(db, `games/${sessionId}/player1`), { name: player1Name });
           set(ref(db, `games/${sessionId}/player2`), { name: playerName });
+
           set(queueRef, []); // Clear queue after assigning players
+
           alert('Match found! Starting game...');
           startGame();
       }
