@@ -19,7 +19,9 @@ let sessionId = null;
 let isPlayer1 = false;
 
 // Game Map (16x9 grid)
-const map = [
+const map_name = none;
+
+const map_uno = [
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
     [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
     [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 1],
@@ -31,12 +33,16 @@ const map = [
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
 ];
 
+if (map_name == map_uno) {
+  map_name = uno;
+} 
+
 // Generate a unique session ID
 function generateSessionId() {
     sessionId = 'game_' + Date.now();
     set(ref(db, `games/${sessionId}`), {
         startTime: Date.now(),
-        map,
+        map_name,
         player1: { x: 1, y: 1 }, // Starting position for Player 1 (blue)
         player2: { x: 14, y: 7 }, // Starting position for Player 2 (red)
     });
@@ -102,41 +108,56 @@ document.addEventListener('keydown', (event) => {
 });
 
 // Queue logic
+// Queue logic for matchmaking
 document.getElementById('queue-button').addEventListener('click', () => {
-    const playerName = document.getElementById('player-name').value;
-    if (!playerName) {
-        alert('Please enter your name!');
-        return;
-    }
+  const playerName = document.getElementById('player-name').value;
+  if (!playerName) {
+      alert('Please enter your name!');
+      return;
+  }
 
-    const queueRef = ref(db, 'queue');
-    onValue(queueRef, (snapshot) => {
-        let queue = snapshot.val() || [];
-        if (queue.includes(playerName)) {
-            alert('You are already in the queue!');
-            return;
-        }
+  const queueRef = ref(db, 'queue');
+  onValue(queueRef, (snapshot) => {
+      let queue = snapshot.val() || [];
+      if (queue.includes(playerName)) {
+          alert('You are already in the queue!');
+          return;
+      }
 
-        if (queue.length === 0) {
-            isPlayer1 = true;
-            queue.push(playerName);
-            set(queueRef, queue);
-            generateSessionId();
-            alert('Waiting for another player...');
-        } else {
-            const [player1] = queue;
-            set(ref(db, `games/${sessionId}/player1`), player1);
-            set(ref(db, `games/${sessionId}/player2`), playerName);
-            set(queueRef, []); // Clear queue
-            startGame();
-        }
-    }, { onlyOnce: true });
+      if (queue.length === 0) {
+          // Player 1 joins the game
+          isPlayer1 = true;
+          queue.push(playerName);
+          set(queueRef, queue);
+          generateSessionId(); // Create a new session
+          set(ref(db, `games/${sessionId}/player1`), { name: playerName });
+          alert('Waiting for another player...');
+      } else {
+          // Player 2 joins the game
+          const player1Name = queue[0]; // The first player in the queue
+          queue.push(playerName);
+          set(ref(db, `games/${sessionId}/player1`), { name: player1Name });
+          set(ref(db, `games/${sessionId}/player2`), { name: playerName });
+          set(queueRef, []); // Clear queue after assigning players
+          alert('Match found! Starting game...');
+          startGame();
+      }
+  }, { onlyOnce: true }); // Only trigger once for this action
 });
 
 // End game
+// End game and delete the session from the database
 function endGame() {
-    if (sessionId) {
-        set(ref(db, `games/${sessionId}`), null);
-        sessionId = null;
-    }
+  if (sessionId) {
+      const sessionRef = ref(db, `games/${sessionId}`);
+      remove(sessionRef) // Delete the entire session from the database
+          .then(() => {
+              console.log(`Game session ${sessionId} has been deleted.`);
+              alert('Game Over! The session has been cleared.');
+          })
+          .catch((error) => {
+              console.error(`Failed to delete game session ${sessionId}:`, error);
+          });
+      sessionId = null;
+  }
 }
