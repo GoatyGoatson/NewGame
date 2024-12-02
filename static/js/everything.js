@@ -30,30 +30,38 @@ function generateSessionId() {
     console.log(`Session ID created: ${sessionId}`);
 }
 
-// Queue logic
+// Queue logic for matchmaking
 document.getElementById('queue-button').addEventListener('click', () => {
-    const playerName = document.getElementById('player-name').value;
-    if (!playerName) {
-        alert('Please enter your name!');
-        return;
-    }
+  const playerName = document.getElementById('player-name').value;
+  if (!playerName) {
+      alert('Please enter your name!');
+      return;
+  }
 
-    onValue(ref(db, 'queue'), (snapshot) => {
-        const queue = snapshot.val() || [];
-        if (queue.length === 0) {
-            // Add player to queue as player1
-            isPlayer1 = true;
-            set(ref(db, 'queue'), [playerName]);
-            generateSessionId();
-        } else {
-            // Add player to game as player2
-            const [player1] = queue;
-            set(ref(db, `games/${sessionId}/player1`), player1);
-            set(ref(db, `games/${sessionId}/player2`), playerName);
-            set(ref(db, 'queue'), []); // Clear queue
-            startGame();
-        }
-    });
+  const queueRef = ref(db, 'queue');
+  onValue(queueRef, (snapshot) => {
+      let queue = snapshot.val() || [];
+      if (queue.includes(playerName)) {
+          alert('You are already in the queue!');
+          return;
+      }
+
+      if (queue.length === 0) {
+          // Add as player1
+          isPlayer1 = true;
+          queue.push(playerName);
+          update(queueRef, queue);
+          generateSessionId();
+          alert('Waiting for another player...');
+      } else {
+          // Add as player2 and start game
+          const [player1] = queue;
+          set(ref(db, `games/${sessionId}/player1`), player1);
+          set(ref(db, `games/${sessionId}/player2`), playerName);
+          set(queueRef, []); // Clear the queue
+          startGame();
+      }
+  }, { onlyOnce: true }); // Only trigger once for this action
 });
 
 // Start game
