@@ -19,7 +19,7 @@ let sessionId = null;
 let isPlayer1 = false;
 
 // Game Map (16x9 grid)
-const map_name = none;
+const map_name = "";
 
 const map_uno = [
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
@@ -107,7 +107,6 @@ document.addEventListener('keydown', (event) => {
     update(ref(db, `games/${sessionId}/${playerPath}`), newPosition);
 });
 
-// Queue logic
 // Queue logic for matchmaking
 document.getElementById('queue-button').addEventListener('click', () => {
   const playerName = document.getElementById('player-name').value;
