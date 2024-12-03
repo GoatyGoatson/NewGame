@@ -147,8 +147,8 @@ document.getElementById('queue-button').addEventListener('click', async () => {
           queue.push(playerName);
           set(queueRef, queue);
           try {
-              sessionId = `game_${Date.now()}`; // Use the same session ID logic
-              await set(ref(db, `games/${sessionId}/player2`), {
+              // Use the existing session ID
+              await update(ref(db, `games/${sessionId}`), {
                   name: playerName,
                   x: 14, // Starting position for Player 2
                   y: 7
