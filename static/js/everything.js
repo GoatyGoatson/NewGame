@@ -37,16 +37,25 @@ if (map_name == map_uno) {
   map_name = uno;
 } 
 
-// Generate a unique session ID
+// Generate a unique session ID and return a Promise
 function generateSessionId() {
-    sessionId = 'game_' + Date.now();
-    set(ref(db, `games/${sessionId}`), {
-        startTime: Date.now(),
-        map_name,
-        player1: { x: 1, y: 1 }, // Starting position for Player 1 (blue)
-        player2: { x: 14, y: 7 }, // Starting position for Player 2 (red)
-    });
-    console.log(`Session ID created: ${sessionId}`);
+  return new Promise((resolve, reject) => {
+      sessionId = 'game_' + Date.now();
+      set(ref(db, `games/${sessionId}`), {
+          startTime: Date.now(),
+          map,
+          player1: null,
+          player2: null,
+      })
+      .then(() => {
+          console.log(`Session ID created: ${sessionId}`);
+          resolve(sessionId);
+      })
+      .catch((error) => {
+          console.error('Failed to create session ID:', error);
+          reject(error);
+      });
+  });
 }
 
 // Render the map
@@ -108,7 +117,7 @@ document.addEventListener('keydown', (event) => {
 });
 
 // Queue logic for matchmaking
-document.getElementById('queue-button').addEventListener('click', () => {
+document.getElementById('queue-button').addEventListener('click', async () => {
   const playerName = document.getElementById('player-name').value;
   if (!playerName) {
       alert('Please enter your name!');
@@ -116,7 +125,7 @@ document.getElementById('queue-button').addEventListener('click', () => {
   }
 
   const queueRef = ref(db, 'queue');
-  onValue(queueRef, (snapshot) => {
+  onValue(queueRef, async (snapshot) => {
       let queue = snapshot.val() || [];
       if (queue.includes(playerName)) {
           alert('You are already in the queue!');
@@ -126,44 +135,31 @@ document.getElementById('queue-button').addEventListener('click', () => {
       if (queue.length === 0) {
           // Player 1 joins the game
           isPlayer1 = true;
-
           queue.push(playerName);
           set(queueRef, queue);
-          generateSessionId(); // Create a new session
-
-          const info = document.getElementById("game-status");
-          info.textContent = 'Waiting for another player...';
-          
-
+          try {
+              const session = await generateSessionId(); // Ensure session ID is ready
+              set(ref(db, `games/${session}/player1`), { name: playerName });
+              alert('Waiting for another player...');
+          } catch (error) {
+              console.error('Failed to create game session:', error);
+          }
       } else {
           // Player 2 joins the game
-          const player1Name = queue[0]; // The first player in the queue
+          const player1Name = queue[0];
           queue.push(playerName);
-
-          set(ref(db, `games/${sessionId}/player1`), { name: player1Name });
-          set(ref(db, `games/${sessionId}/player2`), { name: playerName });
-
-          const queueRef = ref(db, `queue`);
-          remove (queueRef)
-
-          info.textContent = 'Match found! Starting game...';
-          startGame();
+          try {
+              if (!sessionId) {
+                  sessionId = 'game_' + Date.now(); // Fallback in case sessionId is undefined
+              }
+              set(ref(db, `games/${sessionId}/player1`), { name: player1Name });
+              set(ref(db, `games/${sessionId}/player2`), { name: playerName });
+              set(queueRef, []); // Clear queue after assigning players
+              alert('Match found! Starting game...');
+              startGame();
+          } catch (error) {
+              console.error('Failed to update players in game session:', error);
+          }
       }
-  }, { onlyOnce: true }); // Only trigger once for this action
+  }, { onlyOnce: true });
 });
-
-// End game and delete the session from the database
-function endGame() {
-  if (sessionId) {
-      const sessionRef = ref(db, `games/${sessionId}`);
-      remove(sessionRef) // Delete the entire session from the database
-          .then(() => {
-              console.log(`Game session ${sessionId} has been deleted.`);
-              alert('Game Over! The session has been cleared.');
-          })
-          .catch((error) => {
-              console.error(`Failed to delete game session ${sessionId}:`, error);
-          });
-      sessionId = null;
-  }
-}
