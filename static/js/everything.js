@@ -149,9 +149,7 @@ document.getElementById('queue-button').addEventListener('click', async () => {
           try {
               // Use the existing session ID
               await update(ref(db, `games/${sessionId}`), {
-                  name: playerName,
-                  x: 14, // Starting position for Player 2
-                  y: 7
+                player2: { name: playerName, x: 1, y: 1 }
               });
               info.textContent = `Game started with ${player1Name} and ${playerName}`;
               startGame();
