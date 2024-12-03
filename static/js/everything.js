@@ -64,6 +64,11 @@ function renderMap(player1, player2) {
     // Check if player1 and player2 are defined
     player1 = player1 || { x: -1, y: -1 };
     player2 = player2 || { x: -1, y: -1 };
+
+    info.textContent += `Player 1: ${player1.name} (${player1.x}, ${player1.y})`;
+    info.textContent += ` Player 2: ${player2.name} (${player2.x}, ${player2.y})`;
+    
+    // Render the game map
     map.forEach((row, y) => {
         row.forEach((tile, x) => {
             const tileElement = document.createElement('div');

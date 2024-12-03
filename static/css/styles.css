@@ -178,9 +178,11 @@ ul > li:hover {
   }
   
   .player1 {
+    color: darkblue;
     opacity: 0.8;
   }
   
   .player2 {
+    color: darkred;
     opacity: 0.8;
   }
