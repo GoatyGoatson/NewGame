@@ -136,8 +136,8 @@ document.getElementById('queue-button').addEventListener('click', async () => {
           queue.push(playerName);
           set(queueRef, queue);
           try {
-              const { sessionId } = await generateSessionId(playerName); // Get session ID and player name
               info.textContent = 'Waiting for another player...';
+              await generateSessionId(playerName);
           } catch (error) {
               console.error('Failed to create game session:', error);
           }
@@ -145,14 +145,15 @@ document.getElementById('queue-button').addEventListener('click', async () => {
           // Player 2 joins the game
           const player1Name = queue[0];
           queue.push(playerName);
+          set(queueRef, queue);
           try {
-              if (!sessionId) {
-                  sessionId = 'game_' + Date.now(); // Fallback in case sessionId is undefined
-              }
-              set(ref(db, `games/${sessionId}/player1`), { name: player1Name });
-              set(ref(db, `games/${sessionId}/player2`), { name: playerName });
-              set(queueRef, []); // Clear queue after assigning players
-              info.textContent = 'Match found! Starting game...';
+              sessionId = `game_${Date.now()}`; // Use the same session ID logic
+              await set(ref(db, `games/${sessionId}/player2`), {
+                  name: playerName,
+                  x: 14, // Starting position for Player 2
+                  y: 7
+              });
+              info.textContent = `Game started with ${player1Name} and ${playerName}`;
               startGame();
           } catch (error) {
               console.error('Failed to update players in game session:', error);
