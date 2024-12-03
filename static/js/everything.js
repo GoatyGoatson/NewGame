@@ -21,7 +21,7 @@ let isPlayer1 = false;
 // Game Map (16x9 grid)
 const map_name = "...";
 
-const map_uno = [
+const map = [
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
     [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
     [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 1],
@@ -32,10 +32,6 @@ const map_uno = [
     [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
 ];
-
-if (map_name == map_uno) {
-  map_name = uno;
-} 
 
 const info = document.getElementById("game-status");
 
