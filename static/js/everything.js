@@ -126,11 +126,12 @@ document.getElementById('queue-button').addEventListener('click', () => {
       if (queue.length === 0) {
           // Player 1 joins the game
           isPlayer1 = true;
+
           queue.push(playerName);
           set(queueRef, queue);
           generateSessionId(); // Create a new session
 
-          const info = document.getElementById("game-statis");
+          const info = document.getElementById("game-status");
           info.textContent = 'Waiting for another player...';
           
 
@@ -145,7 +146,7 @@ document.getElementById('queue-button').addEventListener('click', () => {
           const queueRef = ref(db, `queue`);
           remove (queueRef)
 
-          alert('Match found! Starting game...');
+          info.textContent = 'Match found! Starting game...');
           startGame();
       }
   }, { onlyOnce: true }); // Only trigger once for this action
