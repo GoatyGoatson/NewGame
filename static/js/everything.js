@@ -37,6 +37,8 @@ if (map_name == map_uno) {
   map_name = uno;
 } 
 
+const info = document.getElementById("game-status");
+
 // Generate a unique session ID and return a Promise
 function generateSessionId() {
   return new Promise((resolve, reject) => {
@@ -140,7 +142,7 @@ document.getElementById('queue-button').addEventListener('click', async () => {
           try {
               const session = await generateSessionId(); // Ensure session ID is ready
               set(ref(db, `games/${session}/player1`), { name: playerName });
-              alert('Waiting for another player...');
+              info.textContent = 'Waiting for another player...';
           } catch (error) {
               console.error('Failed to create game session:', error);
           }
@@ -155,7 +157,7 @@ document.getElementById('queue-button').addEventListener('click', async () => {
               set(ref(db, `games/${sessionId}/player1`), { name: player1Name });
               set(ref(db, `games/${sessionId}/player2`), { name: playerName });
               set(queueRef, []); // Clear queue after assigning players
-              alert('Match found! Starting game...');
+              info.textContent = 'Match found! Starting game...';
               startGame();
           } catch (error) {
               console.error('Failed to update players in game session:', error);
