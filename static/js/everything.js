@@ -36,18 +36,18 @@ const map = [
 const info = document.getElementById("game-status");
 
 // Generate a unique session ID and return a Promise
-function generateSessionId() {
+function generateSessionId(playerName) {
   return new Promise((resolve, reject) => {
       sessionId = 'game_' + Date.now();
       set(ref(db, `games/${sessionId}`), {
           startTime: Date.now(),
           map,
-          player1: null,
+          player1: { name: playerName, x: 1, y: 1 }, // Set player1's name and initial position
           player2: null,
       })
       .then(() => {
           console.log(`Session ID created: ${sessionId}`);
-          resolve(sessionId);
+          resolve({ sessionId, playerName });
       })
       .catch((error) => {
           console.error('Failed to create session ID:', error);
@@ -136,8 +136,7 @@ document.getElementById('queue-button').addEventListener('click', async () => {
           queue.push(playerName);
           set(queueRef, queue);
           try {
-              const session = await generateSessionId(); // Ensure session ID is ready
-              set(ref(db, `games/${session}/player1`), { name: playerName });
+              const { sessionId } = await generateSessionId(playerName); // Get session ID and player name
               info.textContent = 'Waiting for another player...';
           } catch (error) {
               console.error('Failed to create game session:', error);
