@@ -146,7 +146,7 @@ document.getElementById('queue-button').addEventListener('click', () => {
           const queueRef = ref(db, `queue`);
           remove (queueRef)
 
-          info.textContent = 'Match found! Starting game...');
+          info.textContent = 'Match found! Starting game...';
           startGame();
       }
   }, { onlyOnce: true }); // Only trigger once for this action
