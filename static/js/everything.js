@@ -34,6 +34,7 @@ const map = [
 ];
 
 const info = document.getElementById("game-status");
+const timer = document.getElementById("timer");
 
 // Generate a unique session ID and return a Promise
 function generateSessionId(playerName) {
@@ -67,7 +68,7 @@ function renderMap(player1, player2) {
 
     info.textContent += `Player 1: ${player1.name} (${player1.x}, ${player1.y})`;
     info.textContent += ` Player 2: ${player2.name} (${player2.x}, ${player2.y})`;
-    
+
     // Render the game map
     map.forEach((row, y) => {
         row.forEach((tile, x) => {
@@ -85,6 +86,10 @@ function renderMap(player1, player2) {
     });
 }
 
+// Timer variables
+let timeLeft = 180; // 3 minutes in seconds
+let timerInterval;
+
 // Start game
 function startGame() {
     onValue(ref(db, `games/${sessionId}`), (snapshot) => {
@@ -100,10 +105,17 @@ function startGame() {
         renderMap(gameData.player1, gameData.player2);
     });
 
-    setTimeout(() => {
-        alert('Game Over!');
-        endGame();
-    }, 180000); // 3-minute timer
+    // Start the timer
+    timerInterval = setInterval(() => {
+        timeLeft--;
+        timer.textContent = `Time left: ${timeLeft} seconds`;
+
+        if (timeLeft <= 0) {
+            timer.textContent = 'Game Over!';
+            endGame();
+            clearInterval(timerInterval);
+        }
+    }, 1000); // Update every second
 }
 
 // Player movement
@@ -130,7 +142,6 @@ document.addEventListener('keydown', (event) => {
     update(ref(db, `games/${sessionId}/${playerPath}`), newPosition);
 });
 
-// Queue logic for matchmaking
 // Queue logic for matchmaking
 document.getElementById('queue-button').addEventListener('click', async () => {
   const playerName = document.getElementById('player-name').value;
@@ -183,3 +194,34 @@ document.getElementById('queue-button').addEventListener('click', async () => {
       }
   }, { onlyOnce: true });
 });
+
+function endGame() {
+    // Disable the queue button
+    const queueButton = document.getElementById("queue-button");
+    queueButton.disabled = true;
+  
+    // Update the game status in the database
+    update(gameRef, {
+      status: "inactive"
+    }).then(() => {
+      console.log("Game ended!");
+  
+      // Clear the player queue
+      set(playerQueueRef, null);
+  
+      // Clear the game data
+      set(gameRef, null);
+  
+      // Clear the bullets data
+      set(bulletsRef, null);
+
+      // Clear the timer interval
+      clearInterval(timerInterval);
+  
+      // Display a message to the players
+      const gameStatusElement = document.getElementById("game-status");
+      gameStatusElement.textContent = "Match beendet!";
+    }).catch((error) => {
+      console.error("Error ending the game:", error);
+    });
+  }
