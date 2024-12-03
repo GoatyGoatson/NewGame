@@ -38,16 +38,16 @@ const info = document.getElementById("game-status");
 // Generate a unique session ID and return a Promise
 function generateSessionId(playerName) {
   return new Promise((resolve, reject) => {
-      sessionId = 'game_' + Date.now();
-      set(ref(db, `games/${sessionId}`), {
+      const newSessionId = 'game_' + Date.now();
+      set(ref(db, `games/${newSessionId}`), {
           startTime: Date.now(),
           map,
-          player1: { name: playerName, x: 1, y: 1 }, // Set player1's name and initial position
-          player2: null,
+          player1: { name: playerName, x: 1, y: 1 },
+          player2: { name: null, x: 14, y: 7 },
       })
       .then(() => {
-          console.log(`Session ID created: ${sessionId}`);
-          resolve({ sessionId, playerName });
+          console.log(`Session ID created: ${newSessionId}`);
+          resolve({ sessionId: newSessionId, playerName });
       })
       .catch((error) => {
           console.error('Failed to create session ID:', error);
@@ -60,6 +60,10 @@ function generateSessionId(playerName) {
 function renderMap(player1, player2) {
     const gameContainer = document.getElementById('game');
     gameContainer.innerHTML = ''; // Clear previous content
+
+    // Check if player1 and player2 are defined
+    player1 = player1 || { x: -1, y: -1 };
+    player2 = player2 || { x: -1, y: -1 };
     map.forEach((row, y) => {
         row.forEach((tile, x) => {
             const tileElement = document.createElement('div');
@@ -80,7 +84,14 @@ function renderMap(player1, player2) {
 function startGame() {
     onValue(ref(db, `games/${sessionId}`), (snapshot) => {
         const gameData = snapshot.val();
-        if (!gameData) return;
+        if (!gameData) {
+            console.error('No game data found');
+            return;
+        }
+        if (!gameData.player1 || !gameData.player2) {
+            console.error('Player data is missing');
+            return;
+        }
         renderMap(gameData.player1, gameData.player2);
     });
 
@@ -115,6 +126,7 @@ document.addEventListener('keydown', (event) => {
 });
 
 // Queue logic for matchmaking
+// Queue logic for matchmaking
 document.getElementById('queue-button').addEventListener('click', async () => {
   const playerName = document.getElementById('player-name').value;
   if (!playerName) {
@@ -125,7 +137,7 @@ document.getElementById('queue-button').addEventListener('click', async () => {
   const queueRef = ref(db, 'queue');
   onValue(queueRef, async (snapshot) => {
       let queue = snapshot.val() || [];
-      if (queue.includes(playerName)) {
+      if (queue.some(player => player.name === playerName)) {
           alert('You are already in the queue!');
           return;
       }
@@ -133,25 +145,32 @@ document.getElementById('queue-button').addEventListener('click', async () => {
       if (queue.length === 0) {
           // Player 1 joins the game
           isPlayer1 = true;
-          queue.push(playerName);
-          set(queueRef, queue);
           try {
+              const { sessionId: newSessionId } = await generateSessionId(playerName);
+              sessionId = newSessionId;
+              queue.push({ name: playerName, sessionId: newSessionId });
+              await set(queueRef, queue);
               info.textContent = 'Waiting for another player...';
-              await generateSessionId(playerName);
           } catch (error) {
               console.error('Failed to create game session:', error);
           }
       } else {
           // Player 2 joins the game
-          const player1Name = queue[0];
-          queue.push(playerName);
-          set(queueRef, queue);
+          const player1Data = queue[0];
+          sessionId = player1Data.sessionId;
+          isPlayer1 = false;
+          queue.push({ name: playerName });
           try {
-              // Use the existing session ID
+              await set(queueRef, queue);
               await update(ref(db, `games/${sessionId}`), {
-                player2: { name: playerName, x: 1, y: 1 }
+                player2: { name: playerName, x: 14, y: 7 }
               });
-              info.textContent = `Game started with ${player1Name} and ${playerName}`;
+              info.textContent = `Game started with ${player1Data.name} and ${playerName}`;
+
+              // Remove players from the queue
+              await remove(queueRef);
+
+              // Start the game
               startGame();
           } catch (error) {
               console.error('Failed to update players in game session:', error);
