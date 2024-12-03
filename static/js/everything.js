@@ -196,6 +196,9 @@ document.getElementById('queue-button').addEventListener('click', async () => {
 });
 
 function endGame() {
+    const gameRef = ref(db, 'games');
+    const playerQueueRef = ref(db, 'queue');
+
     // Disable the queue button
     const queueButton = document.getElementById("queue-button");
     queueButton.disabled = true;
@@ -212,8 +215,8 @@ function endGame() {
       // Clear the game data
       set(gameRef, null);
   
-      // Clear the bullets data
-      set(bulletsRef, null);
+      // Clear the bullets data - habe ich noch nicht
+      // set(bulletsRef, null);
 
       // Clear the timer interval
       clearInterval(timerInterval);
